@@ -1,0 +1,5 @@
+#!/bin/bash
+export CELLWORLD_CACHE=/mnt/c/Research/cellworld_data
+../cmake-build-debug/create_options -o $1 > "$CELLWORLD_CACHE/graph/hexagonal.$1.options"
+
+

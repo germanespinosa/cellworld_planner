@@ -1,0 +1,4 @@
+#!/bin/bash
+export CELLWORLD_CACHE=/mnt/c/Research/cellworld_data
+../cmake-build-debug/create_visibility -o $1 > "$CELLWORLD_CACHE/graph/hexagonal.$1.cell_visibility"
+

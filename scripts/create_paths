@@ -1,0 +1,5 @@
+#!/bin/bash
+export CELLWORLD_CACHE=/mnt/c/Research/cellworld_data
+../cmake-build-debug/create_paths -o $1 > "$CELLWORLD_CACHE/paths/hexagonal.$1.astar"
+
+

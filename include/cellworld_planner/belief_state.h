@@ -30,5 +30,6 @@ namespace cell_world::planner {
         void record_state(const Model_public_state &state);
         Model_state get_particle();
         Model_state get_root_state();
+        void reset();
     };
 }

@@ -61,6 +61,27 @@ target_link_libraries( create_visibility
         cellworld
         params-cpp)
 
+add_executable(create_predator_destinations src/tools/create_predator_destinations.cpp)
+
+target_link_libraries( create_predator_destinations
+        LINK_PUBLIC
+        cellworld
+        params-cpp)
+
+add_executable(create_spawn_locations src/tools/create_spawn_locations.cpp)
+
+target_link_libraries( create_spawn_locations
+        LINK_PUBLIC
+        cellworld
+        params-cpp)
+
+add_executable(create_experiment src/tools/create_experiment.cpp)
+
+target_link_libraries( create_experiment
+        LINK_PUBLIC
+        cellworld
+        params-cpp)
+
 add_executable(simulation src/tools/simulation.cpp)
 
 target_link_libraries( simulation

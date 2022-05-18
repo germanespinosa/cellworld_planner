@@ -22,25 +22,10 @@ planner::Belief_state::Belief_state(const Static_data &data):
     data(data),
     prey(data),
     predator(data),
-    model(data.cells){
+    model(data.cells, 1000){
     model.add_agent(prey);
     model.add_agent(predator);
-    previous_prey_coordinates = data.start_cell.coordinates;
-    for (int i=0;i<data.max_particle_creation_attempts && particles.size()<data.max_particle_count;i++){
-        model.start_episode();
-        particles.push_back(model.get_state());
-        model.end_episode();
-    }
 }
-
-struct Belief_state_progress : json_cpp::Json_object {
-    Json_object_members(
-            Add_member(prey_cell);
-            Add_member(hits);
-    )
-    Coordinates prey_cell;
-    Json_vector<int> hits;
-};
 
 void planner::Belief_state::record_state(const Model_public_state &state) {
     auto &prey_state = state.agents_state[PREY];
@@ -51,15 +36,20 @@ void planner::Belief_state::record_state(const Model_public_state &state) {
         history = {};
 
         model.set_public_state(state);
-        // if the state is post-turn, evolve
-        if (state.current_turn == PREDATOR) model.update();
+
+
+        if (state.current_turn == PREDATOR) {
+            model.update(); // if the state is post-turn, evolve the particle
+        } else {
+            predator.update_state(state); // lets the predator update the internal state
+        }
 
         // this state becomes the root state for future particles
         root_state = model.get_state();
 
         // reset all particles
         particles.clear();
-        for(int i=0;i<data.max_particle_count;i++) particles.push_back(root_state);
+        for(int i=0;i<data.simulation_parameters.tree_search_parameters.belief_state_parameters.max_particle_count;i++) particles.push_back(root_state);
         previous_prey_coordinates = prey_state.cell.coordinates;
     } else
     // if the predator is not visible
@@ -86,38 +76,28 @@ void planner::Belief_state::record_state(const Model_public_state &state) {
                 }
                 model.end_episode();
             }
-            for (int i=0; i<data.max_particle_creation_attempts && new_particles.size()<data.max_particle_count; i++){
+            for (int i = 0;
+                 i < data.simulation_parameters.tree_search_parameters.belief_state_parameters.max_particle_creation_attempts && new_particles.size() < data.simulation_parameters.tree_search_parameters.belief_state_parameters.max_particle_count; i++) {
                 auto root_state = get_root_state();
                 bool valid = true;
                 model.set_state(root_state);
-                for (auto move:history){
+                for (auto move: history) {
                     prey.next_move = move;
                     model.update(); // PREDATOR's turn
                     model.update(); // PREY's turn
                     auto &prey_cell = model.state.public_state.agents_state[PREY].cell;
                     auto &predator_cell = model.state.public_state.agents_state[PREDATOR].cell;
                     if (data.visibility[prey_cell].contains(predator_cell)) {
-                        valid  = false;
+                        valid = false;
                         break;
                     }
                 }
-               if (valid){
+                if (valid) {
                     new_particles.push_back(model.get_state());
                 }
                 model.end_episode();
             }
             particles = new_particles;
-            //show progress
-            Belief_state_progress progress;
-            progress.hits = Json_vector<int>(data.world.size(), 0);
-            for (auto &p : particles){
-                progress.hits[p.public_state.agents_state[PREDATOR].cell.id] ++;
-            }
-            auto &prey_cell = data.map[previous_prey_coordinates];
-            progress.prey_cell = prey_cell.coordinates;
-            cout << progress << "," << endl;
-            //show progress
-
             previous_prey_coordinates = prey_state.cell.coordinates;
         }
     }
@@ -135,5 +115,17 @@ Model_state planner::Belief_state::get_root_state() {
         return state;
     } else {
         return root_state;
+    }
+}
+
+void planner::Belief_state::reset() {
+    history.clear();
+    previous_prey_coordinates = data.start_cell.coordinates;
+    particles.clear();
+    if (model.state.public_state.status == Model_public_state::Status::Running) model.end_episode();
+    for (int i=0;i<data.simulation_parameters.tree_search_parameters.belief_state_parameters.max_particle_creation_attempts && particles.size()<data.simulation_parameters.tree_search_parameters.belief_state_parameters.max_particle_count;i++){
+        model.start_episode();
+        particles.push_back(model.get_state());
+        model.end_episode();
     }
 }

@@ -3,11 +3,12 @@
 using namespace cell_world;
 
 const Cell &planner::Predator::start_episode() {
+    internal_state().destination_id = Not_found;
+    internal_state().behavior = Predator_state::Exploring;
     return data.predator_start_locations.random_cell();
 }
 
 Move planner::Predator::get_move(const Model_public_state &public_state) {
-    return Move(0,0);
     auto &prey_state = public_state.agents_state[0];
     auto &predator_state = public_state.agents_state[1];
     auto &internal_state = this->internal_state();
@@ -15,18 +16,28 @@ Move planner::Predator::get_move(const Model_public_state &public_state) {
         internal_state.behavior = Predator_state::Pursuing;
         internal_state.destination_id = prey_state.cell.id;
     } else {
-        if (internal_state.destination_id == predator_state.cell.id) { // destination reached
+        if (internal_state.destination_id == Not_found || internal_state.destination_id == predator_state.cell.id) { // destination reached
             auto not_visible_destinations = data.visibility[predator_state.cell] & data.possible_destinations;
             internal_state.destination_id = not_visible_destinations.random_cell().id;
             internal_state.behavior = Predator_state::Exploring;
         }
     }
-    Move best_move = data.paths.get_move(predator_state.cell, data.cells[internal_state.destination_id]);
-    if (Chance::coin_toss(data.predator_best_move_probability)){
-        return best_move;
-    } else {
-        return data.predator_moves[Chance::dice(data.predator_moves.size())];
+    auto speed = data.simulation_parameters.predator_parameters.exploration_speed;
+    if (internal_state.behavior == Predator_state::Pursuing){
+        speed = data.simulation_parameters.predator_parameters.pursue_speed;
     }
+    int confirmed_moves = int (speed);
+    float final_move_probability = speed - confirmed_moves;
+    Move move(0,0);
+    for (int move_count = 0;move_count < confirmed_moves; move_count++){
+        auto &current_predator_cell =  data.map[predator_state.cell.coordinates + move];
+        move  += data.paths.get_move(current_predator_cell, data.cells[internal_state.destination_id]);
+    }
+    if (Chance::coin_toss(final_move_probability)) {
+        auto &current_predator_cell =  data.map[predator_state.cell.coordinates + move];
+        move  += data.paths.get_move(current_predator_cell, data.cells[internal_state.destination_id]);
+    }
+    return move;
 }
 
 planner::Predator::Predator(const planner::Static_data &data):
@@ -34,5 +45,12 @@ planner::Predator::Predator(const planner::Static_data &data):
 }
 
 Agent_status_code planner::Predator::update_state(const Model_public_state &public_state) {
+    auto &prey_state = public_state.agents_state[0];
+    auto &predator_state = public_state.agents_state[1];
+    auto &internal_state = this->internal_state();
+    if (data.visibility[predator_state.cell].contains(prey_state.cell)){ // prey is visible
+        internal_state.behavior = Predator_state::Pursuing;
+        internal_state.destination_id = prey_state.cell.id;
+    }
     return Agent_status_code::Running;
 }

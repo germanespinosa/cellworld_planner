@@ -1,0 +1,13 @@
+#!/bin/bash
+export CELLWORLD_CACHE=/mnt/c/Research/cellworld_data
+
+#!/bin/bash
+for i in {1..1000}
+do
+  foo=$(printf "%04d" $i)
+  echo "Running $foo"
+  ../../cmake-build-debug/simulation -s $i -o $1> "simulation.$1.$foo.json"
+done
+
+
+

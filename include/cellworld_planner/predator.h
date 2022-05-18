@@ -10,9 +10,8 @@ namespace cell_world::planner {
             Exploring,
             Pursuing
         };
-        unsigned int destination_id{};
+        int destination_id{};
         Behavior behavior{Exploring};
-        Move last_move;
     };
 
     struct Predator : Stateful_agent<Predator_state> {

@@ -34,6 +34,7 @@ int main (int argc, char **argv){
     Paths paths = world.create_paths(paths_builder);
     Cell_group lppos = world.create_cell_group(lppos_builder);
     for (const Cell &cell:graph.cells){
+        if (cell.occluded) continue;
         for (const Cell &lppo:lppos){
             auto option_path = paths.get_path(cell, lppo);
             if (cell.id == 137 && lppo.id == 94){

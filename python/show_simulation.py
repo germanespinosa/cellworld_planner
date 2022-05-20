@@ -21,7 +21,7 @@ def make_video(frame_files_path, video_file):
     concat_clip.write_videofile(video_file, fps=fps)
 
 
-simulation = Simulation.load_from_file("../cmake-build-debug/results.json")
+simulation = Simulation.load_from_file("./results.json")
 
 w = World.get_from_parameters_names(simulation.experiment.world_configuration_name,simulation.experiment.world_implementation_name, simulation.experiment.occlusions)
 d = Display(w, animated=True)
@@ -38,7 +38,7 @@ clips = []
 t=None
 
 for i, episode in enumerate(simulation.experiment.episodes):
-    episode_folder = "videos/episode_%04d" % (i,)
+    episode_folder = "./episode_%04d" % (i,)
     mkdir(episode_folder)
 #    plt.plot(value_function[i])
     for step in episode.trajectories:

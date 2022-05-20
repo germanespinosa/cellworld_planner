@@ -10,6 +10,11 @@ using namespace cell_world::planner;
 
 int main(int argc, char **argv){
     Parser p(argc,argv);
+    auto configuration_file = p.get(Key("-c","--configuration_file"),"");
+    if (configuration_file.empty()){
+        cout << "Missing simulation configuration file parameter." << endl;
+        exit(1);
+    }
     auto results_file = p.get(Key("-r","--results_file"),"results.json");
     auto occlusions = p.get(Key("-o","--occlusions"),"20_05");
     auto seed_start = stoi(p.get(Key("-ss","--seed_start"),"0"));
@@ -22,23 +27,7 @@ int main(int argc, char **argv){
     Static_data data(world_info);
     data.predator_moves = world.connection_pattern;
     data.predator_moves.push_back(Coordinates(0,0));
-    data.simulation_parameters.tree_search_parameters.belief_state_parameters.max_particle_count = 100;
-    data.simulation_parameters.tree_search_parameters.belief_state_parameters.max_particle_creation_attempts = 1000;
-    data.simulation_parameters.predator_parameters.pursue_speed = 1;
-    data.simulation_parameters.predator_parameters.exploration_speed = .75;
-    data.simulation_parameters.tree_search_parameters.simulations = 1000;
-    data.simulation_parameters.tree_search_parameters.depth = 100;
-    data.simulation_parameters.reward.capture_cost = 100;
-    data.simulation_parameters.reward.step_cost = 1;
-    data.simulation_parameters.reward.episode_reward = 0;
-    data.simulation_parameters.reward.gamma = .90;
-    data.simulation_parameters.reward.default_value = -10000;
-    Model model(data.cells, 1000);
-    Prey prey(data);
-    Predator predator(data);
-    model.add_agent(prey);
-    model.add_agent(predator);
-
+    data.simulation_parameters = json_cpp::Json_from_file<Simulation_parameters>(configuration_file);
     Simulation simulation;
     simulation.parameters = data.simulation_parameters;
     auto &experiment = simulation.experiment;
@@ -48,6 +37,11 @@ int main(int argc, char **argv){
     experiment.start_time = json_cpp::Json_date::now();
     experiment.name = "SIMULATION";
     for (int s = seed_start;s < seed_end;s++) {
+        Model model(data.cells, 1000);
+        Prey prey(data);
+        Predator predator(data);
+        model.add_agent(prey);
+        model.add_agent(predator);
         auto episode_count = std::string(4 - to_string(experiment.episodes.size()).size(), '0') + to_string(experiment.episodes.size());
         auto &episode = experiment.episodes.emplace_back();
         cout << "running episode " << episode_count << endl;
@@ -74,7 +68,6 @@ int main(int argc, char **argv){
                 step.time_stamp = frame;
             }
         }
-//        prey.mcts.history.save("simulation." + occlusions + "." + episode_count + ".json");
     }
     simulation.save(results_file);
 }

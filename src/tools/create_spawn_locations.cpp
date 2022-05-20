@@ -28,4 +28,3 @@ int main (int argc, char **argv){
     }
     cout << spawn_locations << endl;
 }
-

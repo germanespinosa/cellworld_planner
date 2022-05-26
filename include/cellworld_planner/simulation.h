@@ -1,6 +1,5 @@
 #pragma once
 #include <cell_world.h>
-#include <json_cpp.h>
 
 namespace cell_world::planner {
 
@@ -9,29 +8,28 @@ namespace cell_world::planner {
         float gamma;
         float capture_cost;
         float episode_reward;
-        float default_value;
 
         Json_object_members(
                 Add_member(step_cost);
                 Add_member(gamma);
                 Add_member(capture_cost);
                 Add_member(episode_reward);
-                Add_member(default_value);
         )
     };
     using Belief_state_representation = json_cpp::Json_vector<unsigned int>;
 
     struct Prey_state : json_cpp::Json_object {
-        unsigned int frame;
+        unsigned int cell_id;
         Cell_group_builder options;
         json_cpp::Json_vector<float> options_values;
         Belief_state_representation belief_state;
-
+        bool capture;
         Json_object_members(
-                Add_member(frame);
+                Add_member(cell_id);
                 Add_member(options);
                 Add_member(options_values);
                 Add_member(belief_state);
+                Add_member(capture);
                 )
     };
 
@@ -75,14 +73,42 @@ namespace cell_world::planner {
         )
     };
 
-    struct Simulation : json_cpp::Json_object {
-        Simulation_parameters parameters;
-        Experiment experiment;
-        json_cpp::Json_vector<json_cpp::Json_vector<Prey_state>> prey_data;
+    struct Predator_state : Agent_internal_state {
+        enum Behavior {
+            Exploring,
+            Pursuing
+        };
+
         Json_object_members(
+                Add_member(cell_id);
+                Add_member(destination_id);
+                Add_member(behavior);
+        )
+        unsigned int cell_id{};
+        int destination_id{};
+        Behavior behavior{Exploring};
+    };
+
+
+    struct Simulation_step : json_cpp::Json_object {
+        Json_object_members(
+                Add_member(predator_state);
+                Add_member(prey_state);
+                )
+        Predator_state predator_state;
+        Prey_state prey_state;
+    };
+
+    using Simulation_episode = json_cpp::Json_vector<Simulation_step>;
+
+    struct Simulation : json_cpp::Json_object {
+        World_info world_info;
+        Simulation_parameters parameters;
+        json_cpp::Json_vector<Simulation_episode> episodes;
+        Json_object_members(
+                Add_member(world_info);
                 Add_member(parameters);
-                Add_member(experiment);
-                Add_member(prey_data);
+                Add_member(episodes);
         )
     };
 }

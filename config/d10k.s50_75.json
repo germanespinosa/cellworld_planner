@@ -15,7 +15,6 @@
     "capture_cost": 100,
     "step_cost": 1,
     "episode_reward": 0,
-    "gamma": 0.90,
-    "default_value": -10000.0
+    "gamma": 0.95
   }
 }

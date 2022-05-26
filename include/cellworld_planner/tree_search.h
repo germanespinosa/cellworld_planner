@@ -6,52 +6,45 @@
 
 namespace cell_world::planner{
 
-    struct Node : json_cpp::Json_object {
-        Json_object_members(
-                Add_member(count);
-                Add_member(value);
-                )
-        unsigned int count{};
-        float value{};
-    };
-
-    struct Options_builder: json_cpp::Json_vector<json_cpp::Json_vector<Node>>{
-        explicit Options_builder(size_t);
-    };
-
-    struct Options {
-        explicit Options(const Graph &, const Cell_group &);
-        Options(const Graph &, const Cell_group &, const Options_builder &);
-        const Cell_group &lppos;
-        const Graph &option_graph;
-        Options_builder tree;
-        Node & get_node(const Cell &, const Cell &);
-        const Cell_group &get_options(const Cell &);
+    struct Option {
+        Option(const Cell &cell, const Graph &graph);
+        const Cell &cell;
+        const Graph &graph;
+        void load();
+        Option &get_best_option(double exploration);
+        std::vector<double> rewards;
+        std::vector<unsigned int> counters;
+        std::vector<Option> options;
+        std::vector<double> get_ucb1(double exploration);
+        int best_option = Not_found;
+        void update_reward(double );
     };
 
     struct History_step : json_cpp::Json_object {
         History_step() = default;
-        History_step(const json_cpp::Json_vector<int> &, const Model_public_state &);
-        History_step(const Model_public_state &);
+        explicit History_step(const Model_public_state &);
         Prey_state prey_state;
+        Predator_state predator_state;
         Model_public_state state;
         Json_object_members(
                 Add_member(prey_state);
+                Add_member(predator_state);
                 Add_member(state);
                 )
     };
 
     struct Tree_search {
-        explicit Tree_search(const Static_data &);
+        explicit Tree_search(const Static_data &, Predator &);
         void record(const Model_public_state &);
-        Move get_best_move(const Model_public_state &);
+        Move get_best_move_ucb1(const Model_public_state &);
         const Static_data &data;
+        Predator &predator;
         Belief_state belief_state;
-        Options options;
         Model model;
-        Predator predator;
-        Dummy prey;
+        Predator sim_predator;
+        Dummy sim_prey;
         json_cpp::Json_vector<History_step> history;
+        Cell_capture capture;
         void reset();
     };
 }

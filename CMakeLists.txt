@@ -9,6 +9,7 @@ project(cellworld_planner
 
 find_package(Dependencies)
 
+
 install_dependency(https://github.com/germanespinosa/cellworld Cellworld)
 install_dependency(https://github.com/germanespinosa/params-cpp Params-cpp)
 include_directories(dependencies/params-cpp/include)
@@ -24,7 +25,8 @@ set( cellworld_planner_files
         src/tree_search.cpp
         src/static_data.cpp
         src/predator.cpp
-        src/prey.cpp )
+        src/prey.cpp
+        )
 
 add_library(cellworld_planner ${cellworld_planner_files})
 
@@ -91,3 +93,8 @@ target_link_libraries( simulation
         params-cpp)
 
 
+#tests
+
+install_dependency(https://github.com/germanespinosa/catch CatchTests)
+
+test_library(cellworld)

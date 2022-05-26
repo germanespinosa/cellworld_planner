@@ -1,13 +1,16 @@
 #!/bin/bash
+
+ss=$4
+if [ "$ss" == '' ]; then
+  ss="0"
+fi
+
+se=$5
+if [ "$se" == '' ]; then
+  se="100"
+fi
+
 export CELLWORLD_CACHE=/mnt/c/Research/cellworld_data
 
-#!/bin/bash
-for i in {1..1000}
-do
-  foo=$(printf "%04d" $i)
-  echo "Running $foo"
-  ../../cmake-build-debug/simulation -s $i -o $1> "simulation.$1.$foo.json"
-done
-
-
+../cmake-build-debug/simulation -c $1 -o $2 -r $3 -ss $ss -se $se
 

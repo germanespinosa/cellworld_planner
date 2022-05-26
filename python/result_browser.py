@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+import numpy as np
 import matplotlib
 from time import sleep
 from cellworld import *
@@ -12,36 +12,48 @@ from threading import Thread
 matplotlib.use('Qt5Agg')
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-
+from moviepy.editor import *
 
 
 class Example(QMainWindow):
 
-    def show_step(self):
+    def show_step(self, frames: list = None):
         prey_state = self.current_episode[self.current_frame].prey_state
-        prey_cell_id = prey_state.cell_id
+        prey_cell = self.world.cells[prey_state.cell_id]
+
         predator_state = self.current_episode[self.current_frame].predator_state
-        predator_cell_id = predator_state.cell_id
+        predator_cell = self.world.cells[predator_state.cell_id]
+        predator_destination_cell = self.world.cells[predator_state.destination_id]
         upper_limit = 0
+
         if prey_state.belief_state:
             upper_limit = max(prey_state.belief_state)
+
         if upper_limit > 0:
             cmap = plt.cm.Reds([x / upper_limit for x in prey_state.belief_state])
 
         for cell in self.world.cells:
             color = "white"
-            if upper_limit > 0:
+            if upper_limit > 0 and self.view_belief.isChecked():
                 color = cmap[cell.id]
-            if prey_cell_id == cell.id:
+            if prey_cell.id == cell.id and self.view_prey.isChecked():
                 color = "green"
-            if predator_cell_id == cell.id:
+            if predator_cell.id == cell.id and self.view_predator.isChecked():
                 color = "blue"
             if self.world.cells[cell.id].occluded:
                 color = "black"
             self.display.cell(cell=cell, color=color)
 
+        if self.view_predator.isChecked():
+            self.predator_destination_arrow = self.display.arrow(beginning=predator_cell.location, ending=predator_destination_cell.location, color="blue", existing_arrow=self.predator_destination_arrow)
+            self.predator_destination_arrow.set_visible(True)
+
         self.display.update()
         self.render.draw()
+
+        if frames is not None:
+            image_from_plot = np.frombuffer(self.render.tostring_rgb(), dtype='uint8').reshape(self.render.get_width_height()[::-1] + (3,))
+            frames.append(image_from_plot)
 
     def play_pause(self, e):
         self.tick_paused = not self.tick_paused
@@ -50,46 +62,68 @@ class Example(QMainWindow):
         else:
             self.playAct.setText("&Pause")
 
+    def save_video(self):
+        self.tick_paused = True
+        video_file = QFileDialog.getSaveFileName(self, 'Save video', '.', "Video file (*.mp4)")[0]
+        self.current_frame = 0
+        frames = []
+        for i in range(len(self.current_episode)):
+            self.current_frame = i
+            self.show_step(frames=frames)
+        clips = [ImageClip(m).set_duration(.05) for m in frames]
+        fps = 30
+        concat_clip = concatenate_videoclips(clips, method="compose")
+        concat_clip.write_videofile(video_file, fps=fps, codec="mpeg4")
+
     def init_menu(self):
         exitAct = QAction('&Exit', self)
         exitAct.setShortcut('Ctrl+Q')
         exitAct.setStatusTip('Exit application')
         exitAct.triggered.connect(QApplication.instance().quit)
 
-        openAct = QAction('&Open', self)
+        openAct = QAction('&Open...', self)
         openAct.setShortcut('Ctrl+O')
         openAct.setStatusTip('Open results')
         openAct.triggered.connect(self.open_results)
+
+
+        saveframeAct = QAction('&Save frame...', self)
+        saveframeAct.setShortcut('Ctrl+F')
+        saveframeAct.setStatusTip('Save frame to png')
+        saveframeAct.triggered.connect(self.save_video)
+
+        saveAct = QAction('&Save video...', self)
+        saveAct.setShortcut('Ctrl+S')
+        saveAct.setStatusTip('Save episode video file')
+        saveAct.triggered.connect(self.save_video)
 
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
 
         fileMenu.addAction(openAct)
+        fileMenu.addAction(saveframeAct)
+        fileMenu.addAction(saveAct)
+        fileMenu.addSeparator()
         fileMenu.addAction(exitAct)
 
-        view_prey_trajectoryAct = QAction('&View prey', self, checkable=True)
-        view_prey_trajectoryAct.setChecked(True)
-        view_prey_trajectoryAct.setShortcut('Ctrl+P')
-        view_prey_trajectoryAct.setStatusTip('View prey trajectory')
-        #view_prey_trajectoryAct.triggered.connect(self.open_results)
+        self.view_prey = QAction('Show prey', self, checkable=True)
+        self.view_prey.setChecked(True)
+        self.view_prey.setStatusTip('Show prey trajectory')
 
-        view_predator_trajectoryAct = QAction('&View predator', self, checkable=True)
-        view_predator_trajectoryAct.setChecked(True)
-        view_predator_trajectoryAct.setShortcut('Ctrl+R')
-        view_predator_trajectoryAct.setStatusTip('View predator trajectory')
-        #view_prey_trajectoryAct.triggered.connect(self.open_results)
+        self.view_predator = QAction('Show predator', self, checkable=True)
+        self.view_predator.setChecked(True)
+        self.view_predator.setStatusTip('Show predator trajectory')
 
-        view_predator_trajectoryAct = QAction('&View spawn locations', self, checkable=True)
-        view_predator_trajectoryAct.setChecked(True)
-        view_predator_trajectoryAct.setShortcut('Ctrl+S')
-        view_predator_trajectoryAct.setStatusTip('View predator trajectory')
-        #view_prey_trajectoryAct.triggered.connect(self.open_results)
+        self.view_belief = QAction('View belief state', self, checkable=True)
+        self.view_belief.setChecked(True)
+        self.view_belief.setStatusTip('Show belief state')
 
         viewMenu = menubar.addMenu('&View')
 
 
-        viewMenu.addAction(view_prey_trajectoryAct)
-        viewMenu.addAction(view_predator_trajectoryAct)
+        viewMenu.addAction(self.view_prey)
+        viewMenu.addAction(self.view_predator)
+        viewMenu.addAction(self.view_belief)
 
         self.playAct = QAction('&Play', self)
         self.playAct.setShortcut('Ctrl+SPACE')
@@ -141,6 +175,7 @@ class Example(QMainWindow):
 
         self.world = World.get_from_parameters_names("hexagonal", "canonical")
         self.display = Display(self.world, fig_size=(6, 5))
+        self.predator_destination_arrow = None
 
         self.tick_counter = 0
         self.tick_active = True
@@ -176,7 +211,6 @@ class Example(QMainWindow):
         self.render = FigureCanvasQTAgg(self.display.fig)
         lay.addWidget(self.render)
 
-
         self.simulation = None
         self.current_episode = None
         self.current_episode_index = None
@@ -192,13 +226,13 @@ class Example(QMainWindow):
         print("Episode", self.current_episode_index, "selected")
 
     def open_results(self):
-        fname = QFileDialog.getOpenFileName(self, 'Open file', '.', "Simulation results (*.json)")[0]
-        self.simulation = Simulation.load_from_file(fname)
+        file_name = QFileDialog.getOpenFileName(self, 'Open file', '.', "Simulation results (*.json)")[0]
+        self.simulation = Simulation.load_from_file(file_name)
         self.world.set_occlusions(Cell_group_builder.get_from_name(world_name="hexagonal." + self.simulation.world_info.occlusions, name="occlusions"))
         self.list_gadget.addItems(["{:03d}".format(x) for x in range(len(self.simulation.episodes))])
 
-def main():
 
+def main():
     app = QApplication(sys.argv)
     ex = Example()
     sys.exit(app.exec())

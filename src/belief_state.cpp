@@ -104,7 +104,7 @@ void planner::Belief_state::record_state(const Model_public_state &state) {
 }
 
 Model_state planner::Belief_state::get_particle() {
-    return particles[Chance::dice(particles.size())];
+    return pick_random(particles);
 }
 
 Model_state planner::Belief_state::get_root_state() {

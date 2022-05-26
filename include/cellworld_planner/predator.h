@@ -1,19 +1,9 @@
 #pragma once
 #include <cell_world.h>
-#include <cellworld_planner/agents.h>
+#include <cellworld_planner/simulation.h>
 #include <cellworld_planner/static_data.h>
 
 namespace cell_world::planner {
-
-    struct Predator_state : Agent_internal_state {
-        enum Behavior{
-            Exploring,
-            Pursuing
-        };
-        int destination_id{};
-        Behavior behavior{Exploring};
-    };
-
     struct Predator : Stateful_agent<Predator_state> {
         explicit Predator (const Static_data &data);
         const Cell &start_episode() override;

@@ -3,10 +3,11 @@
 #include <cellworld_planner/agents.h>
 #include <cellworld_planner/static_data.h>
 #include <cellworld_planner/tree_search.h>
+#include <cellworld_planner/predator.h>
 
 namespace cell_world::planner {
     struct Prey : Stateless_agent {
-        explicit Prey (const Static_data &data);
+        explicit Prey (const Static_data &data, Predator &predator);
         const Cell &start_episode() override;
         Move get_move(const Model_public_state &) override;
         Agent_status_code update_state(const Model_public_state &) override;

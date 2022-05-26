@@ -18,5 +18,5 @@ options(world.create_graph(Resources::from("graph").key(world_info.world_configu
 predator_start_locations(world.create_cell_group(Resources::from("cell_group").key(world_info.world_configuration).key(world_info.occlusions).key("spawn_locations").get_resource<Cell_group_builder>())),
 capture(Resources::from("capture_parameters").key("default").get_resource<Capture_parameters>())
 {
-
+    capture.cool_down = 0;
 }

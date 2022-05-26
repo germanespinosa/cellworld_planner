@@ -6,14 +6,25 @@ from os import mkdir
 import glob
 from moviepy.editor import *
 from threading import Thread
+from moviepy.video.io.bindings import mplfig_to_npimage
+import sys
+
+simulation = Simulation.load_from_file(sys.argv[1])
+videos_folder = None
+if len(sys.argv) > 2:
+    videos_folder = sys.argv[2]
+
+if videos_folder:
+    mkdir(videos_folder)
+    os.chdir(videos_folder)
 
 
 def make_video(frame_files_path, video_file):
     if frame_files_path == ".":
         return
     base_dir = os.path.realpath(frame_files_path)
-    print ("working on " + base_dir)
-    fps = 24
+    print("working on " + base_dir)
+    fps = 20
     file_list = glob.glob(base_dir + '/*.png')  # Get all the pngs in the current directory
     clips = [ImageClip(m).set_duration(.05)
              for m in file_list]
@@ -21,10 +32,8 @@ def make_video(frame_files_path, video_file):
     concat_clip.write_videofile(video_file, fps=fps)
 
 
-simulation = Simulation.load_from_file("./results.json")
-
-w = World.get_from_parameters_names(simulation.experiment.world_configuration_name,simulation.experiment.world_implementation_name, simulation.experiment.occlusions)
-d = Display(w, animated=True)
+w = World.get_from_parameters_names(simulation.world_info.world_configuration, simulation.world_info.world_implementation, simulation.world_info.occlusions)
+d = Display(w, animated=True, fig_size=(6, 5))
 prey_cell = -1
 predator_cell = -1
 
@@ -33,13 +42,13 @@ value_function = []
 for prey_history in simulation.prey_data:
     value_function.append([max(x.options_values) for x in prey_history])
 
-clips = []
+t = None
 
-t=None
-
-for i, episode in enumerate(simulation.experiment.episodes):
-    episode_folder = "./episode_%04d" % (i,)
-    mkdir(episode_folder)
+for i in range(simulation.prey_data):
+    clips = []
+    if videos_folder:
+        episode_folder = "./episode_%04d" % (i,)
+        mkdir(episode_folder)
 #    plt.plot(value_function[i])
     for step in episode.trajectories:
         for prey_state in simulation.prey_data[i]:
@@ -50,10 +59,7 @@ for i, episode in enumerate(simulation.experiment.episodes):
                     cmap = plt.cm.Reds([x / upper_limit for x in prey_state.belief_state])
                     for cell_id, c in enumerate(cmap):
                         if not w.cells[cell_id].occluded and cell_id != predator_cell:
-                            if cell_id in prey_state.options:
-                                d.cell(cell_id=cell_id, color=c, edge_color="purple")
-                            else:
-                                d.cell(cell_id=cell_id, color=c)
+                            d.cell(cell_id=cell_id, color=c)
 
         if step.agent_name == "prey":
             if prey_cell >= 0:
@@ -66,10 +72,11 @@ for i, episode in enumerate(simulation.experiment.episodes):
             predator_cell = w.cells.find(step.location)
             d.cell(cell_id=predator_cell, color="blue")
         d.update()
-#        print(step.frame)
-        d.fig.savefig(episode_folder + "/frame_" + "%04d" % (step.frame,) + ".png")
-    if t:
-        t.join()
-    t = Thread(target=make_video, args=(episode_folder, episode_folder + ".mp4"))
-    t.start()
+        if videos_folder:
+            d.fig.savefig(episode_folder + "/frame_" + "%04d" % (step.frame,) + ".png")
+    if videos_folder:
+        if t:
+            t.join()
+        t = Thread(target=make_video, args=(episode_folder, episode_folder + ".mp4"))
+        t.start()
     # break

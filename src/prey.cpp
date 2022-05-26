@@ -2,9 +2,9 @@
 
 using namespace cell_world;
 
-planner::Prey::Prey(const planner::Static_data &data):
+planner::Prey::Prey(const planner::Static_data &data, Predator &predator):
         data(data),
-        mcts(data){
+        mcts(data, predator){
 
 }
 
@@ -14,7 +14,7 @@ const Cell &planner::Prey::start_episode() {
 }
 
 Move planner::Prey::get_move(const Model_public_state &public_state) {
-    auto move = mcts.get_best_move(public_state);
+    auto move = mcts.get_best_move_ucb1(public_state);
     return move;
 }
 

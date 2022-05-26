@@ -1,15 +1,15 @@
 {
   "tree_search_parameters": {
     "belief_state_parameters": {
-      "max_particle_count": 1000,
-      "max_particle_creation_attempts": 10000
+      "max_particle_count": 100,
+      "max_particle_creation_attempts": 1000
     },
-    "simulations": 10000,
+    "simulations": 1000,
     "depth": 50
   },
   "predator_parameters": {
-    "pursue_speed": 0.35,
-    "exploration_speed": 0.17
+    "pursue_speed": 1.00,
+    "exploration_speed": 0.75
   },
   "reward": {
     "capture_cost": 100,

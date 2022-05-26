@@ -1,5 +1,6 @@
 from json_cpp import JsonObject, JsonList
-from cellworld import Experiment, Cell_group_builder
+from cellworld import Experiment, Cell_group_builder, World_info
+
 
 class Reward(JsonObject):
     def __init__(self, step_cost: float = 0.0, gamma: float = 0.0, capture_cost: float = 0.0, episode_reward: float = 0.0, default_value: float = 0.0):
@@ -20,9 +21,16 @@ class Values(JsonList):
         JsonList.__init__(self, list_type=float)
 
 
+class Predator_state(JsonObject):
+    def __init__(self, cell_id: int = 0, destination_id: int = 0, behavior: int = 0):
+        self.cell_id = cell_id
+        self.destination_id = destination_id
+        self.behavior = behavior
+
+
 class Prey_state(JsonObject):
-    def __init__(self, frame: int = 0, options: Cell_group_builder = None, options_values: Values = None, belief_state: Belief_state_representation = None):
-        self.frame = frame
+    def __init__(self, cell_id: int = 0, options: Cell_group_builder = None, options_values: Values = None, belief_state: Belief_state_representation = None, capture: bool = False):
+        self.cell_id = cell_id
         if options:
             self.options = options
         else:
@@ -35,6 +43,7 @@ class Prey_state(JsonObject):
             self.belief_state = belief_state
         else:
             self.belief_state = Belief_state_representation()
+        self.capture = capture
 
 
 class Belief_state_parameters(JsonObject):
@@ -83,19 +92,42 @@ class Prey_state_history(JsonList):
         JsonList.__init__(self, list_type=Prey_state)
 
 
+class Predator_state_history(JsonList):
+    def __init__(self):
+        JsonList.__init__(self, list_type=Predator_state)
+
+
+class Simulation_step(JsonObject):
+    def __init__(self, predator_state: Predator_state = None, prey_state: Prey_state = None):
+        if predator_state:
+            self.predator_state = predator_state
+        else:
+            self.predator_state = Predator_state()
+
+        if prey_state:
+            self.prey_state = prey_state
+        else:
+            self.prey_state = Prey_state()
+
+
+class Simulation_episode(JsonList):
+    def __init__(self):
+        JsonList.__init__(self, list_type=Simulation_step)
+
+
 class Simulation (JsonObject):
-    def __init__(self, parameters: Simulation_parameters = None, experiment: Experiment = None, prey_data: JsonList = None):
+    def __init__(self, world_info: World_info = None, parameters: Simulation_parameters = None, episodes: JsonList = None):
+        if world_info:
+            self.world_info = world_info
+        else:
+            self.world_info = World_info()
+
         if parameters:
             self.parameters = parameters
         else:
             self.parameters = Simulation_parameters()
 
-        if experiment:
-            self.experiment = experiment
+        if episodes:
+            self.episodes = episodes
         else:
-            self.experiment = Experiment()
-
-        if prey_data:
-            self.prey_data = prey_data
-        else:
-            self.prey_data = JsonList(list_type=Prey_state_history)
+            self.episodes = JsonList(list_type=Simulation_episode)

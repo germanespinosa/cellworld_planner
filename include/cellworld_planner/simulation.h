@@ -22,12 +22,14 @@ namespace cell_world::planner {
         unsigned int cell_id;
         Cell_group_builder options;
         json_cpp::Json_vector<float> options_values;
+        Cell_group_builder plan;
         Belief_state_representation belief_state;
         bool capture;
         Json_object_members(
                 Add_member(cell_id);
                 Add_member(options);
                 Add_member(options_values);
+                Add_member(plan);
                 Add_member(belief_state);
                 Add_member(capture);
                 )

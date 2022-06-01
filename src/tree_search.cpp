@@ -82,25 +82,33 @@ Move planner::Tree_search::get_best_move_ucb1(const Model_public_state &state) {
                         step_value -= data.simulation_parameters.reward.capture_cost;
                     }
                 }
+                if (current_lppo_cell_id == prey_cell.id) {
+                    depth ++;
+                    selected_option->load();
+                    selected_option = &selected_option->get_best_option(1);
+                    current_lppo_cell_id = selected_option->cell.id;
+                }
+                auto &current_lppo_cell = data.cells[current_lppo_cell_id];
+                auto move = data.paths.get_move(prey_cell,current_lppo_cell);
+                sim_prey.next_move = move;
+                model.update();
+                model.update();
             }
             value += accum_gamma * (step_value);
             accum_gamma *= data.simulation_parameters.reward.gamma;
-
-            if (current_lppo_cell_id == prey_cell.id) {
-                depth ++ ;
-                selected_option->load();
-                selected_option = &selected_option->get_best_option(1);
-                current_lppo_cell_id = selected_option->cell.id;
-            }
-            auto &current_lppo_cell = data.cells[current_lppo_cell_id];
-            auto move = data.paths.get_move(prey_cell,current_lppo_cell);
-            sim_prey.next_move = move;
-            model.update();
-            model.update();
         }
         root.update_reward(value);
     }
-    return data.paths.get_move(prey_current_cell,root.get_best_option(0).cell);
+
+    auto *best_option = &root.get_best_option(0);
+    auto best_move = data.paths.get_move(prey_current_cell,best_option->cell);
+
+    while (!best_option->counters.empty()){
+        history_step.prey_state.plan.push_back(best_option->cell.id);
+        best_option = &best_option->get_best_option(0);
+    }
+    history_step.prey_state.plan.push_back(best_option->cell.id);
+    return best_move;
 }
 
 planner::History_step::History_step(const Model_public_state &state): state(state) {

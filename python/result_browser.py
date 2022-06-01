@@ -15,6 +15,9 @@ from matplotlib.figure import Figure
 from moviepy.editor import *
 
 
+reward = Reward(step_cost=1, capture_cost=100)
+
+
 class Example(QMainWindow):
 
     def show_step(self, frames: list = None):
@@ -44,9 +47,23 @@ class Example(QMainWindow):
                 color = "black"
             self.display.cell(cell=cell, color=color)
 
-        if self.view_predator.isChecked():
+        if self.view_predator_destination.isChecked():
             self.predator_destination_arrow = self.display.arrow(beginning=predator_cell.location, ending=predator_destination_cell.location, color="blue", existing_arrow=self.predator_destination_arrow)
             self.predator_destination_arrow.set_visible(True)
+        else:
+            if self.predator_destination_arrow:
+                self.predator_destination_arrow.set_visible(False)
+
+        if self.view_prey_plan.isChecked():
+            prev = prey_cell
+            [arrow.set_visible(False) for arrow in self.plan_arrows if arrow is not None]
+            for i, plan_step_cell_id in enumerate(prey_state.plan):
+                next = self.world.cells[plan_step_cell_id]
+                self.plan_arrows[i] = self.display.arrow(beginning=prev.location, ending=next.location, color="green", existing_arrow=self.plan_arrows[i])
+                self.plan_arrows[i].set_visible(True)
+                prev = next
+
+
 
         self.display.update()
         self.render.draw()
@@ -70,7 +87,7 @@ class Example(QMainWindow):
         for i in range(len(self.current_episode)):
             self.current_frame = i
             self.show_step(frames=frames)
-        clips = [ImageClip(m).set_duration(.05) for m in frames]
+        clips = [ImageClip(m).set_duration(self.tick_interval) for m in frames]
         fps = 30
         concat_clip = concatenate_videoclips(clips, method="compose")
         concat_clip.write_videofile(video_file, fps=fps, codec="mpeg4")
@@ -110,9 +127,18 @@ class Example(QMainWindow):
         self.view_prey.setChecked(True)
         self.view_prey.setStatusTip('Show prey trajectory')
 
+        self.view_prey_plan = QAction('Show prey plan', self, checkable=True)
+        self.view_prey_plan.setChecked(False)
+        self.view_prey_plan.setStatusTip('Show prey plan')
+
         self.view_predator = QAction('Show predator', self, checkable=True)
         self.view_predator.setChecked(True)
         self.view_predator.setStatusTip('Show predator trajectory')
+
+        self.view_predator_destination = QAction('Show predator destination', self, checkable=True)
+        self.view_predator_destination.setChecked(False)
+        self.view_predator_destination.setStatusTip('Show predator destination')
+
 
         self.view_belief = QAction('View belief state', self, checkable=True)
         self.view_belief.setChecked(True)
@@ -120,13 +146,14 @@ class Example(QMainWindow):
 
         viewMenu = menubar.addMenu('&View')
 
-
         viewMenu.addAction(self.view_prey)
         viewMenu.addAction(self.view_predator)
+        viewMenu.addAction(self.view_prey_plan)
+        viewMenu.addAction(self.view_predator_destination)
         viewMenu.addAction(self.view_belief)
 
         self.playAct = QAction('&Play', self)
-        self.playAct.setShortcut('Ctrl+SPACE')
+        self.playAct.setShortcut('SPACE')
         self.playAct.setStatusTip('Play/Pause episode replay')
         self.playAct.triggered.connect(self.play_pause)
 
@@ -176,17 +203,18 @@ class Example(QMainWindow):
         self.world = World.get_from_parameters_names("hexagonal", "canonical")
         self.display = Display(self.world, fig_size=(6, 5))
         self.predator_destination_arrow = None
+        self.plan_arrows = [None for x in range(100)]
 
         self.tick_counter = 0
         self.tick_active = True
         self.tick_paused = True
-        self.tick_interval = .5
+        self.tick_interval = .2
         self.tick_thread = Thread(target=self.tick_control)
         self.tick_thread.start()
 
         self.init_menu()
         self.statusBar()
-        self.setGeometry(100, 100, 1000, 700)
+        self.setGeometry(100, 100, 1300, 750)
         self.setWindowTitle("Result Browser")
 
         central_widget = QWidget()
@@ -194,10 +222,12 @@ class Example(QMainWindow):
 
         self.m_w11 = QWidget()
         self.m_w12 = QWidget()
+        self.m_w13 = QWidget()
 
         lay = QGridLayout(central_widget)
         lay.addWidget(self.m_w11, 0, 0)
         lay.addWidget(self.m_w12, 0, 1)
+        lay.addWidget(self.m_w13, 0, 2)
         lay.setColumnStretch(1, 1)
 
         lay = QVBoxLayout(self.m_w11)
@@ -210,6 +240,11 @@ class Example(QMainWindow):
         lay = QVBoxLayout(self.m_w12)
         self.render = FigureCanvasQTAgg(self.display.fig)
         lay.addWidget(self.render)
+
+        lay = QVBoxLayout(self.m_w13)
+
+        self.stats = QTextEdit()
+        lay.addWidget(self.stats)
 
         self.simulation = None
         self.current_episode = None
@@ -224,12 +259,16 @@ class Example(QMainWindow):
         self.current_episode = self.simulation.episodes[self.current_episode_index]
         self.current_frame = 0
         print("Episode", self.current_episode_index, "selected")
+        self.tick_paused = False
 
     def open_results(self):
         file_name = QFileDialog.getOpenFileName(self, 'Open file', '.', "Simulation results (*.json)")[0]
         self.simulation = Simulation.load_from_file(file_name)
         self.world.set_occlusions(Cell_group_builder.get_from_name(world_name="hexagonal." + self.simulation.world_info.occlusions, name="occlusions"))
         self.list_gadget.addItems(["{:03d}".format(x) for x in range(len(self.simulation.episodes))])
+        stats = self.simulation.get_stats(reward=reward)
+        stat_text = stats.format("Survival_rate: {survival_rate:.4f}\nCapture_rate: {capture_rate:.4f}\nPursue_rate: {pursue_rate:.4f}\nBelief_state_entropy: {belief_state_entropy:.4f}\nLength: {length:.4f}\nDistance: {distance:.4f}\nVisited_cells: {visited_cells:.4f}\nValue: {value:.4f}")
+        self.stats.setText(stat_text)
 
 
 def main():

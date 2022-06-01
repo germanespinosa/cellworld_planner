@@ -26,6 +26,7 @@ set( cellworld_planner_files
         src/static_data.cpp
         src/predator.cpp
         src/prey.cpp
+        src/thig_prey.cpp
         )
 
 add_library(cellworld_planner ${cellworld_planner_files})
@@ -84,9 +85,25 @@ target_link_libraries( create_experiment
         cellworld
         params-cpp)
 
+
+add_executable(create_thigmotaxis src/tools/create_thigmotaxis.cpp)
+
+target_link_libraries( create_thigmotaxis
+        LINK_PUBLIC
+        cellworld
+        params-cpp)
+
 add_executable(simulation src/tools/simulation.cpp)
 
 target_link_libraries( simulation
+        LINK_PUBLIC
+        cellworld_planner
+        cellworld
+        params-cpp)
+
+add_executable(thig_simulation src/tools/thig_simulation.cpp)
+
+target_link_libraries( thig_simulation
         LINK_PUBLIC
         cellworld_planner
         cellworld

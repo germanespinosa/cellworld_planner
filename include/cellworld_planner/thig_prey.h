@@ -15,10 +15,12 @@ namespace cell_world::planner {
             Forward,
             Backward
         };
-        explicit Thig_prey (const Static_data &data);
+        Thig_prey (const Static_data &data, Predator &);
         const Cell &start_episode() override;
         Move get_move(const Model_public_state &) override;
         Agent_status_code update_state(const Model_public_state &) override;
+
+        Predator &predator;
         const Static_data &data;
         Route active_route;
         Direction direction;

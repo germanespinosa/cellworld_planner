@@ -211,8 +211,20 @@ class Simulation (JsonObject):
             simulation_stats.value += stats.value / episode_count
             simulation_stats.capture_rate += stats.capture_rate / episode_count
             simulation_stats.survival_rate += stats.survival_rate / episode_count
-            simulation_stats.pursue_rate += stats.survival_rate / episode_count
+            simulation_stats.pursue_rate += stats.pursue_rate / episode_count
             simulation_stats.belief_state_entropy += stats.belief_state_entropy / episode_count
             simulation_stats.distance += stats.distance / episode_count
             simulation_stats.visited_cells += stats.visited_cells / episode_count
         return simulation_stats
+
+
+class Comparison_data(JsonObject):
+    def __init__(self):
+        self.label = ""
+        self.file_name = ""
+
+
+class Comparison(JsonObject):
+    def __init__(self):
+        self.name = ""
+        self.data_points = JsonList(list_type=Comparison_data)

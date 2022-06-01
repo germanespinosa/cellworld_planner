@@ -12,7 +12,9 @@ using namespace cell_world::planner;
 
 void run_simulation( const Static_data &data,
                      Simulation_episode &episode,
-                     atomic<bool> &ready) {
+                     atomic<bool> &ready,
+                     unsigned int seed) {
+    Chance::seed(seed);
     Model model(data.cells, 1000);
     Predator predator(data);
     Thig_prey prey(data);
@@ -73,7 +75,7 @@ int main(int argc, char **argv){
     simulation.world_info.occlusions = occlusions;
     simulation.parameters = data.simulation_parameters;
     simulation.episodes.reserve(seed_end-seed_start);
-    for (int s = seed_start;s < seed_end;s++) {
+    for (unsigned int s = seed_start;s < seed_end;s++) {
         auto available_worker = get_available_worker(worker_available);
         cout << "Processing seed " << s << " on worker " << available_worker << endl;
          worker_available[available_worker] = false;
@@ -82,7 +84,7 @@ int main(int argc, char **argv){
         worker_threads[available_worker] = thread(run_simulation,
                                                   std::ref(data),
                                                   std::ref(episode),
-                                                  std::ref(worker_available[available_worker]));
+                                                  std::ref(worker_available[available_worker]), s);
     }
     for (auto &t:worker_threads) if (t.joinable()) t.join();
     simulation.save(results_file);

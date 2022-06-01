@@ -1,0 +1,25 @@
+{
+  "name":  "Plan 10k by predator speed",
+  "data_points": [
+    {
+      "label": "35%",
+      "file_name": "17_35.json"
+    },
+    {
+      "label": "50%",
+      "file_name": "25_50.json"
+    },
+    {
+      "label": "75%",
+      "file_name": "50_75.json"
+    },
+    {
+      "label": "100%",
+      "file_name": "75_100.json"
+    },
+    {
+      "label": "150%",
+      "file_name": "100_150.json"
+    }
+  ]
+}

@@ -8,8 +8,8 @@
     "depth": 50
   },
   "predator_parameters": {
-    "pursue_speed": 1.00,
-    "exploration_speed": 0.75
+    "pursue_speed": 1.5,
+    "exploration_speed": 1.0
   },
   "reward": {
     "capture_cost": 100,

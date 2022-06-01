@@ -24,7 +24,7 @@ Cell_group_builder get_clean_route(const Cell_group_builder &route, const Graph 
     return clean_route;
 }
 
-planner::Thig_prey::Thig_prey(const planner::Static_data &data): data(data), capture(data.capture, data.visibility) {
+planner::Thig_prey::Thig_prey(const planner::Static_data &data, Predator &predator): predator (predator), data(data), capture(data.capture, data.visibility) {
     Cell_group_builder tmp_north_route;
     Cell_group_builder tmp_south_route;
 
@@ -70,6 +70,7 @@ Move planner::Thig_prey::get_move(const Model_public_state &state) {
     auto &prey_cell = state.agents_state[PREY].cell;
     step.prey_state.cell_id = prey_cell.id;
     auto &predator_cell = state.agents_state[PREDATOR].cell;
+    step.predator_state = predator.internal_state();
     step.predator_state.cell_id = predator_cell.id;
     step.state = state;
     step.prey_state.capture = capture.is_captured(predator_cell, prey_cell);
@@ -134,6 +135,7 @@ Agent_status_code planner::Thig_prey::update_state(const Model_public_state &sta
     auto &prey_cell = state.agents_state[PREY].cell;
     step.prey_state.cell_id = prey_cell.id;
     auto &predator_cell = state.agents_state[PREDATOR].cell;
+    step.predator_state = predator.internal_state();
     step.predator_state.cell_id = predator_cell.id;
     step.state = state;
     if (prey_cell==data.goal_cell) return Finished;

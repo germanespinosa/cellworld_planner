@@ -81,7 +81,7 @@ class Example(QMainWindow):
 
     def save_video(self):
         self.tick_paused = True
-        video_file = QFileDialog.getSaveFileName(self, 'Save video', '.', "Video file (*.mp4)")[0]
+        video_file, codec = QFileDialog.getSaveFileName(self, 'Save video', '.', "mpeg4 (*.mp4);;libx264 (*.mp4);;png (*.avi);;rawvideo (*.avi);;png (*.avi);;libvorbis (*.ogv);;libvpx (*.webm);;qtrle (*.mov)")
         self.current_frame = 0
         frames = []
         for i in range(len(self.current_episode)):
@@ -90,7 +90,8 @@ class Example(QMainWindow):
         clips = [ImageClip(m).set_duration(self.tick_interval) for m in frames]
         fps = 30
         concat_clip = concatenate_videoclips(clips, method="compose")
-        concat_clip.write_videofile(video_file, fps=fps, codec="mpeg4")
+        codec=codec.split(" ")[0];
+        concat_clip.write_videofile(video_file, fps=fps, codec=codec)
 
     def init_menu(self):
         exitAct = QAction('&Exit', self)
@@ -192,8 +193,11 @@ class Example(QMainWindow):
             self.tick_interval += .1
 
     def tick_control(self):
+        t = Timer(.116)
         while self.tick_active:
-            sleep(self.tick_interval)
+            while t:
+                pass
+            t.reset()
             if not self.tick_paused:
                 self.tick()
 

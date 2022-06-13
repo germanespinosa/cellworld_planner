@@ -12,12 +12,11 @@ using namespace cell_world::planner;
 
 void run_simulation( const Static_data &data,
                      Simulation_episode &episode,
-                     atomic<bool> &ready,
                      unsigned int seed) {
     Chance::seed(seed);
     Model model(data.cells, 1000);
     Predator predator(data);
-    Thig_prey prey(data);
+    Thig_prey prey(data, predator);
     model.add_agent(prey);
     model.add_agent(predator);
     model.run();
@@ -25,16 +24,6 @@ void run_simulation( const Static_data &data,
         auto &step = episode.emplace_back();
         step.prey_state = dp.prey_state;
         step.predator_state = dp.predator_state;
-    }
-    ready = true;
-}
-
-int get_available_worker(vector<atomic<bool>> &worker_available){
-    while (true) {
-        for (int w = 0; w < worker_available.size(); w++){
-            if (worker_available[w]) return w;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
@@ -53,12 +42,6 @@ int main(int argc, char **argv){
     auto workers = stoi(p.get(Key("-w","--workers"),"4"));
     auto world = World::get_from_parameters_name("hexagonal","canonical",occlusions);
 
-    vector<thread> worker_threads(workers);
-    vector<atomic<bool>> worker_available(workers);
-
-    for (int w=0;w<workers;w++) worker_available[w] = true;
-
-
     World_info world_info;
     world_info.world_configuration = "hexagonal";
     world_info.world_implementation = "canonical";
@@ -75,17 +58,16 @@ int main(int argc, char **argv){
     simulation.world_info.occlusions = occlusions;
     simulation.parameters = data.simulation_parameters;
     simulation.episodes.reserve(seed_end-seed_start);
+
+    Thread_pool tp(workers);
     for (unsigned int s = seed_start;s < seed_end;s++) {
-        auto available_worker = get_available_worker(worker_available);
-        cout << "Processing seed " << s << " on worker " << available_worker << endl;
-         worker_available[available_worker] = false;
+        cout << "Processing seed " << s << endl;
         auto &episode = simulation.episodes.emplace_back();
-        if (worker_threads[available_worker].joinable()) worker_threads[available_worker].join();
-        worker_threads[available_worker] = thread(run_simulation,
-                                                  std::ref(data),
-                                                  std::ref(episode),
-                                                  std::ref(worker_available[available_worker]), s);
+        tp.run(run_simulation,
+               std::ref(data),
+               std::ref(episode),
+               s);
     }
-    for (auto &t:worker_threads) if (t.joinable()) t.join();
+    tp.wait();
     simulation.save(results_file);
 }

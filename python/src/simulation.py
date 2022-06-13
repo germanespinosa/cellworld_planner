@@ -1,7 +1,7 @@
 import math
 
 from json_cpp import JsonObject, JsonList
-from cellworld import Experiment, Cell_group_builder, World_info, World
+from cellworld import Experiment, Episode, Episode_list, Step, Cell_group_builder, World_info, World
 import math
 
 
@@ -9,10 +9,11 @@ def entropy(labels, base=None):
     n_labels = len(labels)
     if n_labels == 0:
         return 0
-    probs = [0 for x in range(max(labels)+1)]
+    total = sum(labels)
+    if total == 0:
+        return  0
+    probs = [x / total for x in labels]
 
-    for label in labels:
-        probs[label] += 1 / n_labels
     ent = 0.
 
     # Compute entropy
@@ -22,7 +23,7 @@ def entropy(labels, base=None):
     for i in probs:
         if i > 0:
             ent -= i * math.log(i, base)
-    return ent
+    return ent / math.log(len(probs), base)
 
 
 class Reward(JsonObject):
@@ -216,6 +217,50 @@ class Simulation (JsonObject):
             simulation_stats.distance += stats.distance / episode_count
             simulation_stats.visited_cells += stats.visited_cells / episode_count
         return simulation_stats
+
+    @staticmethod
+    def from_experiment(experiment: Experiment, prey_speed: float = .116):
+        simulation = Simulation()
+        simulation.world_info.world_implementation = "canonical"
+        simulation.world_info.world_configuration = experiment.world_configuration_name
+        simulation.world_info.occlusions = experiment.occlusions
+        world = World.get_from_world_info(simulation.world_info)
+        prey = Prey_state()
+        predator = Predator_state()
+        for episode in experiment.episodes:
+            sim_episode = Simulation_episode()
+            time_step = 0
+            prey.cell_id = -1
+            predator.cell_id = -1
+            first_prey_cell = -1
+            first_predator_cell = -1
+            first = True
+            for step_number in range(len(episode.trajectories)):
+                step = episode.trajectories[step_number]
+                cell_id = world.cells.find(step.location)
+                if step.agent_name == "prey":
+                    prey.cell_id = cell_id
+                else:
+                    predator.cell_id = cell_id
+
+                if predator.cell_id == -1 or prey.cell_id == -1:
+                    continue
+
+                if step.time_stamp >= time_step and \
+                        (first or first_prey_cell != prey.cell_id or first_predator_cell != predator.cell_id):
+                    sim_step = Simulation_step()
+                    sim_step.prey_state = prey.copy()
+                    sim_step.predator_state = predator.copy()
+                    sim_episode.append(sim_step)
+                    time_step = step.time_stamp + prey_speed
+
+                if first:
+                    first_prey_cell = prey.cell_id
+                    first_predator_cell = predator.cell_id
+                    first = False
+
+            simulation.episodes.append(sim_episode)
+        return simulation
 
 
 class Comparison_data(JsonObject):

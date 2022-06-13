@@ -110,6 +110,15 @@ target_link_libraries( thig_simulation
         params-cpp)
 
 
+add_executable(create_simulation src/tools/create_simulation.cpp)
+
+target_link_libraries( create_simulation
+        LINK_PUBLIC
+        cellworld_planner
+        cellworld
+        params-cpp)
+
+
 #tests
 
 install_dependency(https://github.com/germanespinosa/catch CatchTests)

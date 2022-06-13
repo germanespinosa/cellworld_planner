@@ -6,11 +6,11 @@ using namespace cell_world;
 using namespace std;
 
 planner::Dummy::Dummy(const planner::Static_data &data):
-        data(data){
+        data(data), start_cell_id(data.start_cell.id){
 }
 
 const Cell &planner::Dummy::start_episode() {
-    return data.start_cell;
+    return data.cells[start_cell_id];
 }
 
 Move planner::Dummy::get_move(const Model_public_state &) {
@@ -18,7 +18,6 @@ Move planner::Dummy::get_move(const Model_public_state &) {
 }
 
 planner::Belief_state::Belief_state(const Static_data &data):
-
     data(data),
     prey(data),
     predator(data),

@@ -3,11 +3,14 @@
 #include <cellworld_planner/prey.h>
 #include <params_cpp.h>
 #include <cellworld_planner/simulation.h>
+#include <thread_pool.h>
 
+using namespace thread_pool;
 using namespace params_cpp;
 using namespace std;
 using namespace cell_world;
 using namespace cell_world::planner;
+
 
 struct Agents_cells : json_cpp::Json_object {
     Json_object_members(
@@ -69,10 +72,9 @@ void create_trajectories ( const Static_data &data,
         ts.get_best_move_ucb1(model.state.public_state);
         predator.next_move = data.cells[step.predator].coordinates - data.cells[prev.predator].coordinates;
         model.update();
-        ts.record(model.state.public_state);
         auto &sim_step = sim_episode.emplace_back();
-        sim_step.prey_state.options = data.options[data.cells[step.prey]].get_builder();
         sim_step.prey_state = ts.history.back().prey_state;
+        ts.record(model.state.public_state);
         sim_step.predator_state.cell_id = step.predator;
         prev = step;
     }
@@ -95,7 +97,7 @@ int main(int argc, char **argv) {
     }
 
     int workers = 8;
-    Thread_pool tp(workers);
+    Thread_pool tp;
     Experiment experiment;
     experiment.load(experiment_file);
     Simulation simulation;
@@ -127,7 +129,7 @@ int main(int argc, char **argv) {
             std::ref(episode),
             prey_speed );
     }
-    tp.wait();
+    tp.wait_all();
     simulation.save(simulation_file);
 }
 

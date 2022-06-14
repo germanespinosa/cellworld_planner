@@ -108,6 +108,7 @@ Move planner::Tree_search::get_best_move_ucb1(const Model_public_state &state) {
         best_option = &best_option->get_best_option(0);
     }
     history_step.prey_state.plan.push_back(best_option->cell.id);
+    history_step.prey_state.options_values = root.rewards;
     return best_move;
 }
 
@@ -123,32 +124,32 @@ Option::Option(const Cell &cell, const Graph &graph) :
 void Option::load() {
     if (!counters.empty()) return;
     counters = vector<unsigned int>(graph[cell].size(),0);
-    rewards = vector<double>(graph[cell].size(),0);
+    rewards = vector<float>(graph[cell].size(),0);
     for (const Cell &option: graph[cell]){
         options.emplace_back(option, graph);
     }
 }
 
-vector<double> Option::get_ucb1(double exploration) {
+vector<float> Option::get_ucb1(float exploration) {
     if (counters.empty()) return {};
-    auto r = vector<double>(counters.size(),0);
+    auto r = vector<float>(counters.size(),0);
     double total = 0;
     for (auto c: counters) total += double(c);
     float p = 2 * log(total);
     for (unsigned int i=0; i<counters.size(); i++){
-        if (counters[i] == 0) r[i] = std::numeric_limits<double>::max();
-        else r[i] = rewards[i] + exploration * sqrt(p/double(counters[i]));
+        if (counters[i] == 0) r[i] = std::numeric_limits<float>::max();
+        else r[i] = rewards[i] + exploration * sqrt(p/float(counters[i]));
     }
     return r;
 }
 
-Option &Option::get_best_option(double exploration) {
+Option &Option::get_best_option(float exploration) {
     auto ucb1_values = get_ucb1(1);
     best_option = Chance::pick_best(1,ucb1_values);
     return options[best_option];
 }
 
-void Option::update_reward(double reward) {
+void Option::update_reward(float reward) {
     if (best_option == Not_found) return;
     rewards[best_option] = (rewards[best_option] * counters[best_option] + reward) / double(counters[best_option] + 1);
     counters[best_option] ++;

@@ -4,11 +4,13 @@
 #include <cellworld_planner/prey.h>
 #include <params_cpp.h>
 #include <cellworld_planner/simulation.h>
+#include <thread_pool.h>
 
 using namespace params_cpp;
 using namespace std;
 using namespace cell_world;
 using namespace cell_world::planner;
+using namespace thread_pool;
 
 void run_simulation( const Static_data &data,
                      Simulation_episode &episode,
@@ -68,6 +70,6 @@ int main(int argc, char **argv){
                 std::ref(episode),
                 s);
     }
-    tp.wait();
+    tp.wait_all();
     simulation.save(results_file);
 }

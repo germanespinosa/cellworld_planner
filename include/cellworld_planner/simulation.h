@@ -96,9 +96,11 @@ namespace cell_world::planner {
         Json_object_members(
                 Add_member(predator_state);
                 Add_member(prey_state);
+                Add_optional_member(data);
                 )
         Predator_state predator_state;
         Prey_state prey_state;
+        std::string data;
     };
 
     using Simulation_episode = json_cpp::Json_vector<Simulation_step>;

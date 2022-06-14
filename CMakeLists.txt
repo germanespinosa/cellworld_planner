@@ -9,6 +9,8 @@ project(cellworld_planner
 
 find_package(Dependencies)
 
+install_dependency(https://github.com/germanespinosa/thread_pool)
+include_directories(dependencies/thread_pool/include)
 
 install_dependency(https://github.com/germanespinosa/cellworld Cellworld)
 install_dependency(https://github.com/germanespinosa/params-cpp Params-cpp)

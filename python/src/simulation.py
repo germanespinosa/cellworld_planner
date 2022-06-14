@@ -126,7 +126,7 @@ class Predator_state_history(JsonList):
 
 
 class Simulation_step(JsonObject):
-    def __init__(self, predator_state: Predator_state = None, prey_state: Prey_state = None):
+    def __init__(self, predator_state: Predator_state = None, prey_state: Prey_state = None, data: str = ""):
         if predator_state:
             self.predator_state = predator_state
         else:
@@ -136,7 +136,7 @@ class Simulation_step(JsonObject):
             self.prey_state = prey_state
         else:
             self.prey_state = Prey_state()
-
+        self.data = data
 
 class Stats(JsonObject):
     def __init__(self):

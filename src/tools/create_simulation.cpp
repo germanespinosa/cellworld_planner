@@ -50,6 +50,7 @@ void create_trajectories ( const Static_data &data,
             first = false;
         }
     }
+    if (episode_cells.empty()) return;
     Model model(data.cells);
     Predator no_predator(data);
     Agent_internal_state_container c(sizeof(Predator_state));

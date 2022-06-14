@@ -18,18 +18,28 @@ struct Agents_cells : json_cpp::Json_object {
             Add_member(predator);
             )
     Agents_cells() = default;
-    Agents_cells(int prey, int predator): prey(prey), predator(predator) {}
+    Agents_cells(int prey, int predator, unsigned int frame): prey(prey), predator(predator), frame(frame) {}
     int prey{};
     int predator{};
+    unsigned int frame{};
+};
+
+struct Simulation_step_data : json_cpp::Json_object {
+    Simulation_step_data() = default;
+    explicit Simulation_step_data (unsigned int frame) : frame(frame) {};
+    Json_object_members(
+            Add_member(frame);
+            )
+    unsigned int frame{};
 };
 
 void create_trajectories ( const Static_data &data,
                            Simulation_episode& sim_episode,
                            const Episode &experiment_episode,
                            float prey_speed) {
-    float time_step = 0;
-    Agents_cells agent_cells(-1, -1);
-    Agents_cells first_agent_cells(-1, -1);
+    double time_step = 0;
+    Agents_cells agent_cells(-1, -1, 0);
+    Agents_cells first_agent_cells(-1, -1, 0);
     bool first = true;
     json_cpp::Json_vector<Agents_cells> episode_cells;
     for (auto &step : experiment_episode.trajectories) {
@@ -42,6 +52,7 @@ void create_trajectories ( const Static_data &data,
         if (agent_cells.predator == -1 || agent_cells.prey == -1) continue;
         if (step.time_stamp >= time_step &&
             (first || first_agent_cells.prey != agent_cells.prey || first_agent_cells.predator != agent_cells.predator)) {
+            agent_cells.frame = step.frame;
             episode_cells.push_back(agent_cells);
             time_step = step.time_stamp + prey_speed;
         }
@@ -65,7 +76,7 @@ void create_trajectories ( const Static_data &data,
     Tree_search ts(data, no_predator);
     Agents_cells prev = episode_cells[0];
     model.start_episode();
-    for (int step_index=0;step_index< episode_cells.size(); step_index++){
+    for (int step_index = 0;step_index< episode_cells.size(); step_index++){
         auto &step = episode_cells[step_index];
         // move agents to match current locations
         prey.next_move = data.cells[step.prey].coordinates - data.cells[prev.prey].coordinates;
@@ -77,6 +88,7 @@ void create_trajectories ( const Static_data &data,
         sim_step.prey_state = ts.history.back().prey_state;
         ts.record(model.state.public_state);
         sim_step.predator_state.cell_id = step.predator;
+        sim_step.data = Simulation_step_data(step.frame).to_json();
         prev = step;
     }
     model.end_episode();

@@ -172,9 +172,15 @@ class Simulation_episode(JsonList):
                 pursue_sum += 1
         stats.length = len(self)
         stats.visited_cells = len(visited_cells)
-        stats.pursue_rate = pursue_sum / stats.length
-        stats.distance = distance_sum / stats.length
-        stats.belief_state_entropy = entropy_sum / stats.length
+        if stats.length > 0:
+            stats.pursue_rate = pursue_sum / stats.length
+            stats.distance = distance_sum / stats.length
+            stats.belief_state_entropy = entropy_sum / stats.length
+        else:
+            stats.pursue_rate = 0
+            stats.distance = 0
+            stats.belief_state_entropy = 0
+
         if stats.capture_rate == 0:
             stats.survival_rate = 1.0
         else:

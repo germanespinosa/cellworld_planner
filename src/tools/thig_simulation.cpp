@@ -61,7 +61,7 @@ int main(int argc, char **argv){
     simulation.parameters = data.simulation_parameters;
     simulation.episodes.reserve(seed_end-seed_start);
 
-    Thread_pool tp(workers);
+    Thread_pool tp;
     for (unsigned int s = seed_start;s < seed_end;s++) {
         cout << "Processing seed " << s << endl;
         auto &episode = simulation.episodes.emplace_back();

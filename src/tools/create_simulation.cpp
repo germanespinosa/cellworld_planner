@@ -134,9 +134,10 @@ int main(int argc, char **argv) {
         auto &episode = experiment.episodes[e];
         cout << "Processing trajectories " << e << endl;
         auto &sim_episode = simulation.episodes[e];
-//        create_trajectories( data, sim_episode, episode, prey_speed);
 
-        tp.run( create_trajectories,
+        //        create_trajectories( data, sim_episode, episode, prey_speed);
+
+        tp.run(create_trajectories,
             std::ref(data),
             std::ref(sim_episode),
             std::ref(episode),

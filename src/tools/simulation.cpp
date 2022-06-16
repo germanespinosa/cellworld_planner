@@ -44,7 +44,7 @@ int main(int argc, char **argv){
     auto workers = stoi(p.get(Key("-w","--workers"),"4"));
     auto world = World::get_from_parameters_name("hexagonal","canonical",occlusions);
 
-    auto tp = Thread_pool (workers);
+    Thread_pool tp;
 
     World_info world_info;
     world_info.world_configuration = "hexagonal";

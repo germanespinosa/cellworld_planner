@@ -36,16 +36,21 @@ class Example(QMainWindow):
             cmap = plt.cm.Reds([x / upper_limit for x in prey_state.belief_state])
 
         for cell in self.world.cells:
+            outline = None
             color = "white"
             if upper_limit > 0 and self.view_belief.isChecked():
                 color = cmap[cell.id]
             if prey_cell.id == cell.id and self.view_prey.isChecked():
                 color = "green"
+                if prey_state.capture:
+                    outline = "red"
             if predator_cell.id == cell.id and self.view_predator.isChecked():
                 color = "blue"
+                if prey_state.capture:
+                    outline = "red"
             if self.world.cells[cell.id].occluded:
                 color = "black"
-            self.display.cell(cell=cell, color=color)
+            self.display.cell(cell=cell, color=color, outline_color=outline)
 
         if self.view_predator_destination.isChecked():
             self.predator_destination_arrow = self.display.arrow(beginning=predator_cell.location, ending=predator_destination_cell.location, color="blue", existing_arrow=self.predator_destination_arrow)
@@ -270,8 +275,10 @@ class Example(QMainWindow):
         self.simulation = Simulation.load_from_file(file_name)
         self.world.set_occlusions(Cell_group_builder.get_from_name(world_name="hexagonal." + self.simulation.world_info.occlusions, name="occlusions"))
         self.list_gadget.addItems(["{:03d}".format(x) for x in range(len(self.simulation.episodes))])
-        stats = self.simulation.get_stats(reward=reward)
-        stat_text = stats.format("Survival_rate: {survival_rate:.4f}\nCapture_rate: {capture_rate:.4f}\nPursue_rate: {pursue_rate:.4f}\nBelief_state_entropy: {belief_state_entropy:.4f}\nLength: {length:.4f}\nDistance: {distance:.4f}\nVisited_cells: {visited_cells:.4f}\nValue: {value:.4f}")
+        stats = Simulation_statistics.load_from_sim_file_name(file_name)
+        if stats is None:
+            stats = self.simulation.get_stats(reward=reward)
+        stat_text = stats.format("Survival_rate: {survival_rate:.4f}\nCapture_rate: {capture_rate:.4f}\nPursue_rate: {pursue_rate:.4f}\nBelief_state_entropy: {belief_state_entropy:.4f}\nLength: {length:.4f}\nDistance: {distance:.4f}\nVisited_cells: {visited_cells:.4f}\nValue: {value:.4f}\nDecision difficulty: {decision_difficulty:.4f}")
         self.stats.setText(stat_text)
 
 

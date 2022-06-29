@@ -1,5 +1,5 @@
 def __module_version__():
-	return 0, 0, 7 
+	return 0, 0, 14 
 
 
 def __module_name__():
@@ -19,7 +19,7 @@ def __package_description__():
 
 
 def __install_requires__():
-	return ['cellworld'] 
+	return ['cellworld', 'moviepy', 'PyQt6'] 
 
 
 def __url__():

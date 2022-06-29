@@ -3,6 +3,7 @@ import math
 from json_cpp import JsonObject, JsonList
 from cellworld import Experiment, Episode, Episode_list, Step, Cell_group_builder, World_info, World
 import math
+import os
 
 
 def entropy(labels, base=None):
@@ -27,12 +28,11 @@ def entropy(labels, base=None):
 
 
 class Reward(JsonObject):
-    def __init__(self, step_cost: float = 0.0, gamma: float = 0.0, capture_cost: float = 0.0, episode_reward: float = 0.0, default_value: float = 0.0):
+    def __init__(self, step_cost: float = 0.0, gamma: float = 0.0, capture_cost: float = 0.0, episode_reward: float = 0.0):
         self.step_cost = step_cost
         self.gamma = gamma
         self.capture_cost = capture_cost
         self.episode_reward = episode_reward
-        self.default_value = default_value
 
 
 class Belief_state_representation(JsonList):
@@ -75,7 +75,6 @@ class Prey_state(JsonObject):
 
 
 class Belief_state_parameters(JsonObject):
-
     def __init__(self, max_particle_count: int = 0, max_particle_creation_attempts: int = 0):
         self.max_particle_count = max_particle_count
         self.max_particle_creation_attempts = max_particle_creation_attempts
@@ -138,7 +137,8 @@ class Simulation_step(JsonObject):
             self.prey_state = Prey_state()
         self.data = data
 
-class Stats(JsonObject):
+
+class Statistics(JsonObject):
     def __init__(self):
         self.length = 0.0
         self.visited_cells = 0.0
@@ -148,13 +148,38 @@ class Stats(JsonObject):
         self.belief_state_entropy = 0.0
         self.pursue_rate = 0.0
         self.distance = 0.0
+        self.decision_difficulty = 0.0
+
+
+class Episodes_statistics(JsonList):
+    def __init__(self):
+        JsonList.__init__(self, list_type=Statistics)
+
+
+class Simulation_statistics(Statistics):
+    def __init__(self):
+        Statistics.__init__(self)
+        self.episode_stats = Episodes_statistics()
+
+    @staticmethod
+    def stats_filename(sim_filename: str) -> str:
+        extension_starts = sim_filename.rfind('.')
+        return sim_filename[:extension_starts] + "_stats" + sim_filename[extension_starts:]
+
+    @staticmethod
+    def load_from_sim_file_name(sim_filename: str):
+        stat_filename = Simulation_statistics.stats_filename(sim_filename)
+        if os.path.exists(stat_filename):
+            return Simulation_statistics.load_from_file(stat_filename)
+        return None
+
 
 class Simulation_episode(JsonList):
     def __init__(self):
         JsonList.__init__(self, list_type=Simulation_step)
 
-    def get_stats(self, world:World) -> Stats:
-        stats = Stats()
+    def get_stats(self, world:World) -> Statistics:
+        stats = Statistics()
         visited_cells = []
         distance_sum = 0
         entropy_sum = 0
@@ -163,7 +188,7 @@ class Simulation_episode(JsonList):
             prey_cell = world.cells[simulation_step.prey_state.cell_id]
             predator_cell = world.cells[simulation_step.predator_state.cell_id]
             if simulation_step.prey_state.capture:
-                stats.capture_rate +=1
+                stats.capture_rate += 1
             if prey_cell.id not in visited_cells:
                 visited_cells.append(prey_cell.id)
             distance_sum += prey_cell.location.dist(predator_cell.location)
@@ -205,10 +230,11 @@ class Simulation (JsonObject):
         else:
             self.episodes = JsonList(list_type=Simulation_episode)
 
-    def get_stats(self, reward: Reward) -> Stats:
+    def get_stats(self, reward: Reward = None) -> Simulation_statistics:
+        if reward is None:
+            reward = self.parameters.reward
         world = World.get_from_world_info(self.world_info)
-        simulation_stats = Stats()
-        simulation_stats.episode_stats = JsonList(list_type=Stats)
+        simulation_stats = Simulation_statistics()
         episode_count = float(len(self.episodes))
         for episode in self.episodes:
             stats = episode.get_stats(world=world)
@@ -274,8 +300,14 @@ class Comparison_data(JsonObject):
         self.label = ""
         self.file_name = ""
 
+class Comparison_mark(JsonObject):
+    def __init__(self):
+        self.data_point = Comparison_data()
+        self.color = "red"
+
 
 class Comparison(JsonObject):
     def __init__(self):
         self.name = ""
         self.data_points = JsonList(list_type=Comparison_data)
+        self.marks = JsonList(list_type=Comparison_mark)

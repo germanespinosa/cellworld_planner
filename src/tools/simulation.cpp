@@ -15,13 +15,13 @@ using namespace thread_pool;
 void run_simulation( const Static_data &data,
                      Simulation_episode &episode,
                      unsigned int seed) {
+    Chance::seed(seed);
     Model model(data.cells, 1000);
     Predator predator(data);
     Prey prey(data, predator);
     model.add_agent(prey);
     model.add_agent(predator);
     model.run();
-    unsigned int frame = 0;
     for (auto &dp:prey.mcts.history){
         auto &step = episode.emplace_back();
         step.prey_state = dp.prey_state;

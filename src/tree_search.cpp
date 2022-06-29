@@ -44,7 +44,6 @@ Move planner::Tree_search::get_best_move_ucb1(const Model_public_state &state) {
     history_step.predator_state.cell_id = predator_current_cell.id;
     history_step.prey_state.capture = capture.is_captured(predator_current_cell, prey_current_cell);
     history_step.prey_state.cell_id = prey_current_cell.id;
-
     history_step.prey_state.belief_state = Json_vector<unsigned int>(data.cells.size(),0);
     for (auto &particle:belief_state.particles){
         history_step.prey_state.belief_state[particle.public_state.agents_state[PREDATOR].cell.id] ++;

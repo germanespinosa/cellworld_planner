@@ -121,6 +121,16 @@ target_link_libraries( create_simulation
         params-cpp)
 
 
+add_executable(create_statistics src/tools/create_statistics.cpp)
+
+target_link_libraries( create_statistics
+        LINK_PUBLIC
+        cellworld_planner
+        cellworld
+        params-cpp)
+
+
+
 #tests
 
 install_dependency(https://github.com/germanespinosa/catch CatchTests)

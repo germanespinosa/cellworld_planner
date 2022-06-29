@@ -89,13 +89,15 @@ class Example(QMainWindow):
         video_file, codec = QFileDialog.getSaveFileName(self, 'Save video', '.', "mpeg4 (*.mp4);;libx264 (*.mp4);;png (*.avi);;rawvideo (*.avi);;png (*.avi);;libvorbis (*.ogv);;libvpx (*.webm);;qtrle (*.mov)")
         self.current_frame = 0
         frames = []
+        print("Processing video")
         for i in range(len(self.current_episode)):
+            print("Frame", i, "from", len(self.current_episode))
             self.current_frame = i
             self.show_step(frames=frames)
         clips = [ImageClip(m).set_duration(self.tick_interval) for m in frames]
         fps = 30
         concat_clip = concatenate_videoclips(clips, method="compose")
-        codec=codec.split(" ")[0];
+        codec = codec.split(" ")[0];
         concat_clip.write_videofile(video_file, fps=fps, codec=codec)
 
     def init_menu(self):
@@ -187,7 +189,6 @@ class Example(QMainWindow):
             self.current_frame = 0
             self.tick_paused = True
         self.tick_counter += 1
-        print("tick", self.tick_counter)
 
     def tick_speed_up(self):
         if self.tick_interval-.1 > 0:

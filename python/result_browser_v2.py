@@ -32,7 +32,6 @@ class EpBrowser(QMainWindow):
         self.central_lay = QGridLayout(self.central_widget)
 
         self.setWindowTitle("Episode browser")
-        
 
     def initialize(self, sim_cont):
         '''
@@ -142,14 +141,18 @@ class StackedDisplay(QWidget):
     May contain parent for
     '''
 
-    def __init__(self, parent=None, stats_dictionary=None, heatmap=None):
+    def __init__(self, parent=None, stats_dictionary=None, map=None):
         super().__init__(parent)
         self.layout = QGridLayout()
         self.stats_dictionary = stats_dictionary
         self.stats_table = TableView(stats_dictionary, self)
-        self.heatmap = heatmap
-        self.layout.addWidget(self.heatmap, 0, 0)
-        self.layout.addWidget(self.stats_table, 1, 0)
+        self.map = map
+        self.layout.addWidget(self.map, 0, 0)
+        if isinstance(self.map, StepMap):
+            self.step_button=QPushButton("&Step")
+            self.step_button.clicked.connect(self.on_step)
+            self.layout.addWidget(self.step_button)
+        self.layout.addWidget(self.stats_table, 2, 0)
         self.setLayout(self.layout)
         self.setGeometry(0, 0, 500, 500)
     
@@ -157,6 +160,76 @@ class StackedDisplay(QWidget):
         if QMouseEvent.button() == Qt.MouseButton.LeftButton:
             self.parent.mousePressEvent(QMouseEvent)
             print('Mouse pressed in stacked display!')
+
+    def on_step(self):
+        if isinstance(self.map, StepMap):
+            self.map.show_step()
+
+
+
+class StepMap(FigureCanvasQTAgg):
+
+    def __init__(self, world, episode, parent=None, title=""):
+
+        self.current_frame=0
+        self.predator_destination_arrow=None
+        self.world=world
+        self.episode=episode
+
+        self.display = Display(world)
+        self.parent=parent
+        super().__init__(self.display.fig)
+        self.display.fig.suptitle(title, fontsize=15)
+        self.setFixedSize(300, 300)
+
+    def show_step(self):
+
+        prey_state = self.episode[self.current_frame].prey_state
+        prey_cell = self.world.cells[prey_state.cell_id]
+
+        predator_state = self.episode[self.current_frame].predator_state
+        predator_cell = self.world.cells[predator_state.cell_id]
+        predator_destination_cell = self.world.cells[predator_state.destination_id]
+
+        if prey_state.belief_state:
+            upper_limit = max(prey_state.belief_state)
+
+        if upper_limit > 0:
+            cmap = plt.cm.Reds([x / upper_limit for x in prey_state.belief_state])
+
+        for cell in self.world.cells:
+            color = "white"
+            if upper_limit > 0:
+                color = cmap[cell.id]
+            if prey_cell.id == cell.id:
+                color = "green"
+            if predator_cell.id == cell.id:
+                color = "blue"
+            if self.world.cells[cell.id].occluded:
+                color = "black"
+            self.display.cell(cell=cell, color=color)
+
+        if True: #self.view_predator_destination.isChecked():
+            self.predator_destination_arrow = self.display.arrow(beginning=predator_cell.location, ending=predator_destination_cell.location, color="blue", existing_arrow=self.predator_destination_arrow)
+            self.predator_destination_arrow.set_visible(True)
+        else:
+            if self.predator_destination_arrow:
+                self.predator_destination_arrow.set_visible(False)
+
+        self.current_frame += 1
+        self.display.update()
+        self.draw()
+
+        # if True: #self.view_prey_plan.isChecked():
+        #     prev = prey_cell
+        #     [arrow.set_visible(False) for arrow in self.plan_arrows if arrow is not None]
+        #     for i, plan_step_cell_id in enumerate(prey_state.plan):
+        #         next = self.world.cells[plan_step_cell_id]
+        #         self.plan_arrows[i] = self.display.arrow(beginning=prev.location, ending=next.location, color="green", existing_arrow=self.plan_arrows[i])
+        #         self.plan_arrows[i].set_visible(True)
+        #         prev = next
+
+        
 
 
 class HeatMap(FigureCanvasQTAgg):
@@ -251,7 +324,7 @@ class EpisodeContainer(StackedDisplay):
         self.detail_view = DetailView(
             parent=self.parent, 
             stacked_disp=StackedDisplay(self.parent, self.ep_stats,
-                HeatMap(self.pred_counters, self.prey_counters, self.world, title="", parent=self.parent)), prey_vals=self.prey_vals, pred_vals=self.pred_vals)
+                map = StepMap(self.world, self.episode, self, "Step map")))
             
 
         super().__init__(self.parent, self.ep_stats, self.hm)

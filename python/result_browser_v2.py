@@ -20,7 +20,10 @@ import pyqtgraph as pg
 import time
 
 # TODO
-# On close ep browser, clear contents
+# Kill play_pause thread after detail view close
+# Add point on graph as steps advance
+# Add reset button
+# Add step counter
 
 
 class EpBrowser(QMainWindow):
@@ -148,10 +151,10 @@ class StackedDisplay(QWidget):
         self.stats_dictionary = stats_dictionary
         self.stats_table = TableView(stats_dictionary, self)
         self.map = map
-        self.layout.addWidget(self.map, 0, 0)
+        self.layout.addWidget(self.map, 0, 0, 1, 2)
         if isinstance(self.map, StepMap):
             self.add_step_map_buttons()
-        self.layout.addWidget(self.stats_table, 2, 0)
+        self.layout.addWidget(self.stats_table, 2, 0, 1, 2)
         self.setLayout(self.layout)
         self.setGeometry(0, 0, 500, 500)
         self.ispaused = True
@@ -167,7 +170,14 @@ class StackedDisplay(QWidget):
         self.pause_icon = self.style().standardIcon(getattr(QStyle.StandardPixmap, 'SP_MediaPause'))
         self.play_button.setIcon(self.play_icon)
         self.play_button.clicked.connect(self.on_play_pause)
-        self.layout.addWidget(self.play_button)
+        self.layout.addWidget(self.play_button, 1, 0, 1, 1)
+
+        # Reset button
+        self.stop_button=QPushButton()
+        self.stop_icon = self.style().standardIcon(getattr(QStyle.StandardPixmap, 'SP_MediaStop'))
+        self.stop_button.setIcon(self.stop_icon)
+        self.stop_button.clicked.connect(self.on_stop)
+        self.layout.addWidget(self.stop_button, 1, 1, 1, 1)
 
     def on_play_pause(self):
         if isinstance(self.map, StepMap):
@@ -176,8 +186,15 @@ class StackedDisplay(QWidget):
                 self.play_button.setIcon(self.play_icon)
             else:
                 self.play_button.setIcon(self.pause_icon)
-                
-                
+
+    def on_stop(self):
+        if isinstance(self.map, StepMap):
+            self.map.current_frame=0 # Reset frame
+            self.play_button.setIcon(self.play_icon) # Reset play/pause button
+            self.map.show_step()
+            self.map.ispaused=True # Stop stepping
+            
+
 
 class StepMap(FigureCanvasQTAgg):
 
@@ -185,7 +202,7 @@ class StepMap(FigureCanvasQTAgg):
 
         self.current_frame=0
         self.ispaused=True
-        self.pp_thread = Thread(target=self.play_pause)
+        self.pp_thread = Thread(target=self.playback)
 
         self.predator_destination_arrow=None
         self.world=world
@@ -197,8 +214,9 @@ class StepMap(FigureCanvasQTAgg):
         self.display.fig.suptitle(title, fontsize=15)
         self.setFixedSize(300, 300)
 
-    def play_pause(self):
+    def playback(self):
         #print('in play pause')
+        self.show_step()
         while True:
             if not self.ispaused and (self.current_frame<len(self.episode)):
                 #print('showing step')
@@ -206,6 +224,8 @@ class StepMap(FigureCanvasQTAgg):
                 time.sleep(0.3)
             elif self.current_frame == len(self.episode):
                 self.current_frame=0
+                self.show_step()
+                self.ispaused=True
 
 
 

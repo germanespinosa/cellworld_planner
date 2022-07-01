@@ -17,6 +17,7 @@ from matplotlib import cm
 from matplotlib.backend_bases import MouseButton
 from os.path import basename
 import pyqtgraph as pg
+import time
 
 # TODO
 # On close ep browser, clear contents
@@ -149,29 +150,43 @@ class StackedDisplay(QWidget):
         self.map = map
         self.layout.addWidget(self.map, 0, 0)
         if isinstance(self.map, StepMap):
-            self.step_button=QPushButton("&Step")
-            self.step_button.clicked.connect(self.on_step)
-            self.layout.addWidget(self.step_button)
+            self.add_step_map_buttons()
         self.layout.addWidget(self.stats_table, 2, 0)
         self.setLayout(self.layout)
         self.setGeometry(0, 0, 500, 500)
+        self.ispaused = True
     
     def mousePressEvent(self, QMouseEvent):
         if QMouseEvent.button() == Qt.MouseButton.LeftButton:
             self.parent.mousePressEvent(QMouseEvent)
             print('Mouse pressed in stacked display!')
 
-    def on_step(self):
+    def add_step_map_buttons(self):
+        self.play_button=QPushButton()
+        self.play_icon = self.style().standardIcon(getattr(QStyle.StandardPixmap, 'SP_MediaPlay'))
+        self.pause_icon = self.style().standardIcon(getattr(QStyle.StandardPixmap, 'SP_MediaPause'))
+        self.play_button.setIcon(self.play_icon)
+        self.play_button.clicked.connect(self.on_play_pause)
+        self.layout.addWidget(self.play_button)
+
+    def on_play_pause(self):
         if isinstance(self.map, StepMap):
-            self.map.show_step()
-
-
+            self.map.ispaused=not self.map.ispaused
+            if self.map.ispaused:
+                self.play_button.setIcon(self.play_icon)
+            else:
+                self.play_button.setIcon(self.pause_icon)
+                
+                
 
 class StepMap(FigureCanvasQTAgg):
 
     def __init__(self, world, episode, parent=None, title=""):
 
         self.current_frame=0
+        self.ispaused=True
+        self.pp_thread = Thread(target=self.play_pause)
+
         self.predator_destination_arrow=None
         self.world=world
         self.episode=episode
@@ -181,6 +196,18 @@ class StepMap(FigureCanvasQTAgg):
         super().__init__(self.display.fig)
         self.display.fig.suptitle(title, fontsize=15)
         self.setFixedSize(300, 300)
+
+    def play_pause(self):
+        #print('in play pause')
+        while True:
+            if not self.ispaused and (self.current_frame<len(self.episode)):
+                #print('showing step')
+                self.show_step()
+                time.sleep(0.3)
+            elif self.current_frame == len(self.episode):
+                self.current_frame=0
+
+
 
     def show_step(self):
 
@@ -324,13 +351,14 @@ class EpisodeContainer(StackedDisplay):
         self.detail_view = DetailView(
             parent=self.parent, 
             stacked_disp=StackedDisplay(self.parent, self.ep_stats,
-                map = StepMap(self.world, self.episode, self, "Step map")))
+                map = StepMap(self.world, self.episode, self, "Step map")), pred_vals=self.pred_vals, prey_vals=self.prey_vals)
             
 
         super().__init__(self.parent, self.ep_stats, self.hm)
 
     def mousePressEvent(self, QMouseEvent):
         self.detail_view.show()
+        self.detail_view.stacked_disp.map.pp_thread.start()
 
     def get_heatmap(self):
 
@@ -484,50 +512,10 @@ class Example(QMainWindow):
         self.playAct.setStatusTip('Play/Pause episode replay')
         self.playAct.triggered.connect(self.play_pause)
 
-        fasterAct = QAction('&Speed UP', self)
-        fasterAct.setShortcut('Ctrl+UP')
-        fasterAct.setStatusTip('Speed up episode replay')
-        fasterAct.triggered.connect(self.tick_speed_up)
-
-        slowerAct = QAction('&Speed DOWN', self)
-        slowerAct.setShortcut('Ctrl+DOWN')
-        slowerAct.setStatusTip('Speed down episode replay')
-        slowerAct.triggered.connect(self.tick_speed_down)
-
         menubar = self.menuBar()
         replayMenu = menubar.addMenu('&Replay')
 
         replayMenu.addAction(self.playAct)
-        replayMenu.addAction(fasterAct)
-        replayMenu.addAction(slowerAct)
-
-    def tick(self):
-        
-        # Update all ep containers
-        for ec in self.loaded_eps:
-            ec.show_step()
-
-        # If all are paused reset to initial frames
-        if all([ec.paused for ec in self.loaded_eps]):
-            self.tick_counter = 0
-            self.play_pause()
-
-        self.tick_counter += 1
-        print("tick", self.tick_counter)
-
-    def tick_speed_up(self):
-        if self.tick_interval-.1 > 0:
-            self.tick_interval -= .1
-
-    def tick_speed_down(self):
-        if self.tick_interval+.1 < 2:
-            self.tick_interval += .1
-
-    def tick_control(self):
-        while self.tick_active:
-            sleep(self.tick_interval)
-            if not self.tick_paused:
-                self.tick()
 
     def __init__(self):
         super().__init__()
@@ -550,12 +538,6 @@ class Example(QMainWindow):
 
         self.ep_browser = EpBrowser(parent=self)
 
-        self.tick_counter = 0
-        self.tick_active = True
-        self.tick_paused = True
-        self.tick_interval = .5
-        self.tick_thread = Thread(target=self.tick_control)
-        self.tick_thread.start()
 
         self.init_menu()
         self.statusBar()

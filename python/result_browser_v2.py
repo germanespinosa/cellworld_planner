@@ -22,7 +22,6 @@ import time
 # TODO
 # Kill play_pause thread after detail view close
 # Add point on graph as steps advance
-# Add reset button
 # Add step counter
 
 
@@ -91,6 +90,10 @@ class DetailView(QMainWindow):
         self.setCentralWidget(self.central_widget)
         self.central_lay = QGridLayout(self.central_widget)
         self.stacked_disp = stacked_disp
+        
+        # Make the step map see the detail view (self) so it can call the plot point update
+        self.stacked_disp.map.detail_view = self
+
         self.central_lay.addWidget(self.stacked_disp, 0, 0)
         self.plot_widget = pg.PlotWidget()
         self.central_lay.addWidget(self.plot_widget, 0, 1)
@@ -98,18 +101,42 @@ class DetailView(QMainWindow):
         
         pen1 = pg.mkPen(color=(255, 0, 0), width=3)
         pen2 = pg.mkPen(color=(0, 0, 255), width=3)
+
+        # Use ScatterPlotItem to draw points
+        self.scatterItem = pg.ScatterPlotItem(
+            size=15, 
+            pen=pg.mkPen(None), 
+            brush=pg.mkBrush(255, 255, 0),
+            hoverable=True,
+            hoverBrush=pg.mkBrush(0, 255, 255)
+        )
+        self.plot_widget.addItem(self.scatterItem)
         
         if pred_vals:
-            pred_x = [v[0] for v in pred_vals]
-            pred_y = [v[1] for v in pred_vals]
-            self.plot_widget.plot(pred_x, pred_y, pen=pen2)
+            self.pred_x = [v[0] for v in pred_vals]
+            self.pred_y = [v[1] for v in pred_vals]
+            self.plot_widget.plot(self.pred_x, self.pred_y, pen=pen2)
 
         if prey_vals:
-            prey_x = [v[0] for v in prey_vals]
-            prey_y = [v[1] for v in prey_vals]
-            self.plot_widget.plot(prey_x, prey_y, pen=pen1)
+            self.prey_x = [v[0] for v in prey_vals]
+            self.prey_y = [v[1] for v in prey_vals]
+            self.plot_widget.plot(self.prey_x, self.prey_y, pen=pen1)
+
+        self.plot_step()
 
         self.setWindowTitle("Episode Details")
+
+    def plot_step(self, step_idx=0):
+        '''
+        Plot a marker point at a given x value
+        '''
+        
+        self.scatterItem.clear()
+        x = [self.prey_x[step_idx]]
+        y = [self.prey_y[step_idx]]
+        self.scatterItem.setPoints(list(x), list(y))
+        
+
 
 
 class TableView(QTableWidget):
@@ -187,6 +214,10 @@ class StackedDisplay(QWidget):
             else:
                 self.play_button.setIcon(self.pause_icon)
 
+            # If the detail_view attribute is set update the scatter plot
+            if hasattr(self, 'detail_view'):
+                pass
+
     def on_stop(self):
         if isinstance(self.map, StepMap):
             self.map.current_frame=0 # Reset frame
@@ -227,9 +258,10 @@ class StepMap(FigureCanvasQTAgg):
                 self.show_step()
                 self.ispaused=True
 
-
-
     def show_step(self):
+
+        if hasattr(self, 'detail_view'):
+            self.detail_view.plot_step(self.current_frame)
 
         prey_state = self.episode[self.current_frame].prey_state
         prey_cell = self.world.cells[prey_state.cell_id]
@@ -371,7 +403,7 @@ class EpisodeContainer(StackedDisplay):
         self.detail_view = DetailView(
             parent=self.parent, 
             stacked_disp=StackedDisplay(self.parent, self.ep_stats,
-                map = StepMap(self.world, self.episode, self, "Step map")), pred_vals=self.pred_vals, prey_vals=self.prey_vals)
+                map = StepMap(self.world, self.episode, self, "")), pred_vals=self.pred_vals, prey_vals=self.prey_vals)
             
 
         super().__init__(self.parent, self.ep_stats, self.hm)

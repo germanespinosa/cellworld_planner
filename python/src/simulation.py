@@ -155,6 +155,7 @@ class Step_statistics(JsonObject):
     def __init__(self):
         self.value = float(0)
         self.decision_difficulty = float(0)
+        self.belief_state_entropy = float(0)
 
 
 class Episode_statistics(Statistics):

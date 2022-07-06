@@ -60,7 +60,8 @@ void create_episode_stats ( Simulation_episode &sim_episode,
         step_stats.value = max(sim_step.prey_state.options_values);
         episode_stats.value += step_stats.value / episode_stats.length;
         episode_stats.distance += prey_cell.location.dist(predator_cell.location);
-        episode_stats.belief_state_entropy += weights_entropy(sim_step.prey_state.belief_state) / episode_stats.length;
+        step_stats.belief_state_entropy = weights_entropy(sim_step.prey_state.belief_state);
+        episode_stats.belief_state_entropy += step_stats.belief_state_entropy / episode_stats.length;
         if (sim_step.predator_state.behavior == cell_world::planner::Predator_state::Pursuing){
             episode_stats.pursue_rate += 1 / episode_stats.length ;
         }

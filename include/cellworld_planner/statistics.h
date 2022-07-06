@@ -31,8 +31,10 @@ namespace cell_world::planner {
         Json_object_members(
                 Add_member(value);
                 Add_member(decision_difficulty);
+                Add_member(belief_state_entropy);
         )
         float value{};
+        float belief_state_entropy{};
         float decision_difficulty{};
     };
 

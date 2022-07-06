@@ -156,7 +156,7 @@ class TableView(QTableWidget):
         for key, val in self.data.items():
             #print(f'Setting {key}: {val} in table...')
             self.setItem(row_idx, 0, QTableWidgetItem(str(key)))
-            self.setItem(row_idx, 1, QTableWidgetItem(str(f'{float(val):.2f}')))
+            self.setItem(row_idx, 1, QTableWidgetItem(str(val)))
             row_idx += 1
         #self.setHorizontalHeaderLabels(horHeaders)
 
@@ -351,7 +351,7 @@ class SimulationContainter(HeatMap):
         print('Finished building world')
         self.world = World.get_from_parameters_names("hexagonal", "canonical")
         self.world.set_occlusions(self.sim_occlusions)
-        stats = self.simulation.get_stats(reward=Reward())
+        stats = Simulation_statistics.load_from_sim_file_name(filename)
         self.loaded_eps = [EpisodeContainer(ep, self.sim_occlusions, stats=stats_, parent=self.parent) for ep, stats_ in zip(self.simulation.episodes, stats.episode_stats)]
         exclude_stats = [attr for attr in dir(stats) if '__' in attr or attr in ['episode_stats', 'save', 'parse', 'load_from_url', 'load_from_file', 'load', 'format', 'copy']]
         sim_stat_props = [attr for attr in dir(stats) if attr not in exclude_stats]

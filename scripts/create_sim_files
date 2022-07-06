@@ -1,0 +1,39 @@
+#!/bin/bash
+src_folder=$1
+dst_folder=$2
+
+mkdir -p $dst_folder
+
+export CELLWORLD_CACHE=/mnt/c/Research/cellworld_data
+
+for DEPTH in 10 11 12 13 14 15 16 17 18 19 20 30 40 50 100 200 300 400 500 1000 2000 3000 4000 5000 10000; do
+  if [ "$DEPTH" -lt "1000" ]
+  then
+    DEPTH_LABEL=$DEPTH
+  else
+    DEPTH_LABEL=$(echo "$(echo "scale=0; $DEPTH/1000"|bc)k")
+  fi
+  mkdir -p "$dst_folder/$DEPTH_LABEL"
+  echo "- Branches sampled $DEPTH_LABEL"
+  config_file="../config/d${DEPTH_LABEL}.s17_35.json"
+
+  for FILE in $src_folder/*_experiment.json; do
+    part1=$(dirname "$FILE")
+    part2=$(basename "$FILE")
+    echo "- Processing $part2"
+    SIM_FILE="$dst_folder/$DEPTH_LABEL/$part2"
+#    if [ ! -f "$SIM_FILE" ]
+#    then
+#      ../cmake-build-debug/create_simulation -e "$FILE" -s "$SIM_FILE" -c "$config_file"
+      echo " creating statistics..."
+      ../cmake-build-debug/create_statistics -s "$SIM_FILE"
+#    else
+#      echo " previous build found"
+#    fi
+    echo ""
+  done
+done
+
+
+
+

@@ -1,0 +1,18 @@
+#!/bin/bash
+src=$1
+
+
+export CELLWORLD_CACHE=/mnt/c/Research/cellworld_data
+echo "$src"
+
+for FILE in $src/*
+do
+#  part1=$(dirname "$FILE")
+#  part2=$(basename "$FILE")
+  echo "- Processing $FILE"
+  ../cmake-build-debug/create_statistics -s $FILE
+done
+
+
+
+

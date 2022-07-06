@@ -44,20 +44,23 @@ float get_decision_difficulty(Move &first, Move &second) {
 }
 
 void create_episode_stats ( Simulation_episode &sim_episode,
-                           Statistics &episode_stats,
+                           Episode_statistics &episode_stats,
                            Reward &reward,
                            Static_data &data) {
     episode_stats.length = sim_episode.size();
     Cell_group visited_cells;
     for (auto &sim_step: sim_episode){
+        auto &step_stats = episode_stats.steps_stats.emplace_back();
         auto &prey_cell = data.cells[sim_step.prey_state.cell_id];
         auto &predator_cell = data.cells[sim_step.predator_state.cell_id];
         if (sim_step.prey_state.capture){
             episode_stats.capture_rate += 1;
         }
         visited_cells.add(prey_cell);
+        step_stats.value = max(sim_step.prey_state.options_values);
+        episode_stats.value += step_stats.value / episode_stats.length;
         episode_stats.distance += prey_cell.location.dist(predator_cell.location);
-        episode_stats.belief_state_entropy += weights_entropy(sim_step.prey_state.belief_state);
+        episode_stats.belief_state_entropy += weights_entropy(sim_step.prey_state.belief_state) / episode_stats.length;
         if (sim_step.predator_state.behavior == cell_world::planner::Predator_state::Pursuing){
             episode_stats.pursue_rate += 1 / episode_stats.length ;
         }
@@ -91,7 +94,8 @@ void create_episode_stats ( Simulation_episode &sim_episode,
             auto range = abs(aggregated_values[best] - aggregated_values[worst]);
             auto first_diff =  abs(aggregated_values[best] - aggregated_values[second]);
             if (first_diff < .2 * range){
-                episode_stats.decision_difficulty += get_decision_difficulty (data.world.connection_pattern[best],data.world.connection_pattern[second]) / episode_stats.length;
+                step_stats.decision_difficulty = get_decision_difficulty (data.world.connection_pattern[best],data.world.connection_pattern[second]);
+                episode_stats.decision_difficulty += step_stats.decision_difficulty / episode_stats.length;
             }
         }
 
@@ -100,7 +104,7 @@ void create_episode_stats ( Simulation_episode &sim_episode,
     if (episode_stats.capture_rate == 0){
         episode_stats.survival_rate = 1;
     }
-    episode_stats.value = reward.episode_reward - reward.step_cost * episode_stats.length - reward.capture_cost * episode_stats.capture_rate;
+    //episode_stats.value = reward.episode_reward - reward.step_cost * episode_stats.length - reward.capture_cost * episode_stats.capture_rate;
 }
 
 int main(int argc, char **argv) {
@@ -129,7 +133,7 @@ int main(int argc, char **argv) {
     }
     Static_data data(simulation.world_info);
     Simulation_statistics sim_stats;
-    sim_stats.episode_stats = Episodes_statistics (simulation.episodes.size());
+    sim_stats.episode_stats = json_cpp::Json_vector<Episode_statistics> (simulation.episodes.size());
     for (int e = 0 ; e < simulation.episodes.size(); e++) {
         auto &episode_stats = sim_stats.episode_stats[e];
         cout << "Processing trajectories " << e << endl;

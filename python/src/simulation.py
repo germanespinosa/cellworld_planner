@@ -12,7 +12,7 @@ def entropy(labels, base=None):
         return 0
     total = sum(labels)
     if total == 0:
-        return  0
+        return 0
     probs = [x / total for x in labels]
 
     ent = 0.
@@ -151,15 +151,22 @@ class Statistics(JsonObject):
         self.decision_difficulty = 0.0
 
 
-class Episodes_statistics(JsonList):
+class Step_statistics(JsonObject):
     def __init__(self):
-        JsonList.__init__(self, list_type=Statistics)
+        self.value = float(0)
+        self.decision_difficulty = float(0)
+
+
+class Episode_statistics(Statistics):
+    def __init__(self):
+        Statistics.__init__(self)
+        self.steps_stats = JsonList(list_type=Step_statistics)
 
 
 class Simulation_statistics(Statistics):
     def __init__(self):
         Statistics.__init__(self)
-        self.episode_stats = Episodes_statistics()
+        self.episode_stats = JsonList(list_type=Episode_statistics)
 
     @staticmethod
     def stats_filename(sim_filename: str) -> str:
@@ -178,7 +185,7 @@ class Simulation_episode(JsonList):
     def __init__(self):
         JsonList.__init__(self, list_type=Simulation_step)
 
-    def get_stats(self, world:World) -> Statistics:
+    def get_stats(self, world: World) -> Statistics:
         stats = Statistics()
         visited_cells = []
         distance_sum = 0
@@ -297,8 +304,13 @@ class Simulation (JsonObject):
 
 class Comparison_data(JsonObject):
     def __init__(self):
-        self.label = ""
         self.file_name = ""
+
+
+class Comparison_data_list(JsonList):
+    def __init__(self):
+        JsonList.__init__(self, list_type=Comparison_data)
+
 
 class Comparison_mark(JsonObject):
     def __init__(self):
@@ -309,5 +321,7 @@ class Comparison_mark(JsonObject):
 class Comparison(JsonObject):
     def __init__(self):
         self.name = ""
-        self.data_points = JsonList(list_type=Comparison_data)
+        self.data_points = JsonList(list_type=Comparison_data_list)
+        self.labels = JsonList(list_type=str)
+        self.colors = JsonList(list_type=str)
         self.marks = JsonList(list_type=Comparison_mark)

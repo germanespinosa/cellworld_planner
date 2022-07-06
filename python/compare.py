@@ -25,57 +25,58 @@ if len(argv) < 2:
 
 comparison = Comparison.load_from_file(argv[1])
 
-length = []
-value = []
-survival_rate = []
-capture_rate = []
-distance = []
-belief_state_entropy = []
-pursue_rate = []
-labels = []
-visited_cells = []
-decision_difficulty = []
-for dp in comparison.data_points:
-    print("Processing " + dp.label)
-    labels.append(dp.label)
-    stats = Simulation_statistics.load_from_sim_file_name(dp.file_name)
-    if stats is None:
-        s = Simulation.load_from_file(dp.file_name)
-        stats = s.get_stats()
-    length.append(stats.length)
-    value.append(stats.value)
-    survival_rate.append(stats.survival_rate)
-    capture_rate.append(stats.capture_rate)
-    distance.append(stats.distance)
-    belief_state_entropy.append(stats.belief_state_entropy)
-    pursue_rate.append(stats.pursue_rate)
-    visited_cells.append(stats.visited_cells)
-    decision_difficulty.append(stats.decision_difficulty)
-
 fig, axs = plt.subplots(3, 3, figsize=(12, 10))
 fig.suptitle(comparison.name)
 
+#read labels
+labels = comparison.labels
 plt.setp(axs, xticks=list(range(len(labels))), xticklabels=labels)
-axs[0, 0].plot(length)
-axs[0, 0].set_title('Episode length')
-axs[1, 0].plot(value)
-axs[1, 0].set_title('Avg Value')
-axs[2, 0].plot(distance)
-axs[2, 0].set_title('Avg predator-prey dist.')
-axs[0, 1].plot(survival_rate)
-axs[0, 1].set_title('Survival rate')
-axs[0, 1].set_ylim([0, 1])
-axs[1, 1].plot(capture_rate)
-axs[1, 1].set_title('Capture rate')
-axs[2, 1].plot(belief_state_entropy)
-axs[2, 1].set_title('Belief state entropy')
-#axs[2, 1].set_ylim([0, 1])
-axs[0, 2].plot(pursue_rate)
-axs[0, 2].set_title('Pursue rate')
-axs[1, 2].plot(visited_cells)
-axs[1, 2].set_title('Visited cells')
-axs[2, 2].plot(decision_difficulty)
-axs[2, 2].set_title('Decision difficulty')
+
+for i, dpl in enumerate(comparison.data_points):
+    length = []
+    value = []
+    survival_rate = []
+    capture_rate = []
+    distance = []
+    belief_state_entropy = []
+    pursue_rate = []
+    visited_cells = []
+    decision_difficulty = []
+    for dp in dpl:
+        print("Processing " + dp.file_name)
+        stats = Simulation_statistics.load_from_sim_file_name(dp.file_name)
+        if stats is None:
+            s = Simulation.load_from_file(dp.file_name)
+            stats = s.get_stats()
+        length.append(stats.length)
+        value.append(stats.value)
+        survival_rate.append(stats.survival_rate)
+        capture_rate.append(stats.capture_rate)
+        distance.append(stats.distance)
+        belief_state_entropy.append(stats.belief_state_entropy)
+        pursue_rate.append(stats.pursue_rate)
+        visited_cells.append(stats.visited_cells)
+        decision_difficulty.append(stats.decision_difficulty)
+    axs[0, 0].plot(length, c=comparison.colors[i])
+    axs[0, 0].set_title('Episode length')
+    axs[1, 0].plot(value, c=comparison.colors[i])
+    axs[1, 0].set_title('Avg Value')
+    axs[2, 0].plot(distance, c=comparison.colors[i])
+    axs[2, 0].set_title('Avg predator-prey dist.')
+    axs[0, 1].plot(survival_rate, c=comparison.colors[i])
+    axs[0, 1].set_title('Survival rate')
+    axs[0, 1].set_ylim([0, 1])
+    axs[1, 1].plot(capture_rate, c=comparison.colors[i])
+    axs[1, 1].set_title('Capture rate')
+    axs[2, 1].plot(belief_state_entropy, c=comparison.colors[i])
+    axs[2, 1].set_title('Belief state entropy')
+    #axs[2, 1].set_ylim([0, 1])
+    axs[0, 2].plot(pursue_rate, c=comparison.colors[i])
+    axs[0, 2].set_title('Pursue rate')
+    axs[1, 2].plot(visited_cells, c=comparison.colors[i])
+    axs[1, 2].set_title('Visited cells')
+    axs[2, 2].plot(decision_difficulty, c=comparison.colors[i])
+    axs[2, 2].set_title('Decision difficulty')
 
 
 if comparison.marks:

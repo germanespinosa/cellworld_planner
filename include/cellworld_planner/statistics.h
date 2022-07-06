@@ -27,14 +27,28 @@ namespace cell_world::planner {
         float decision_difficulty{};
     };
 
-    using Episodes_statistics = json_cpp::Json_vector<Statistics>;
+    struct Step_statistics : json_cpp::Json_object {
+        Json_object_members(
+                Add_member(value);
+                Add_member(decision_difficulty);
+        )
+        float value{};
+        float decision_difficulty{};
+    };
 
+    struct Episode_statistics : Statistics {
+        Json_object_members(
+                Statistics::json_set_builder(jb);
+                Add_optional_member(steps_stats);
+        )
+        json_cpp::Json_vector<Step_statistics> steps_stats;
+    };
 
     struct Simulation_statistics : Statistics {
         Json_object_members(
                 Statistics::json_set_builder(jb);
                 Add_optional_member(episode_stats);
         )
-        Episodes_statistics episode_stats;
+        json_cpp::Json_vector<Episode_statistics> episode_stats;
     };
 }

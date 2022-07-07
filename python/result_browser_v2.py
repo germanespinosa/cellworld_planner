@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from inspect import stack
 from turtle import width
 import numpy as np
 import matplotlib
@@ -23,6 +24,8 @@ import time
 # Kill play_pause thread after detail view close
 # Add point on graph as steps advance
 # Add step counter
+
+# Check two files at upload (exp and stats)
 
 
 class EpBrowser(QMainWindow):
@@ -132,7 +135,7 @@ class DetailView(QMainWindow):
         '''
         
         self.scatterItem.clear()
-        x = [self.prey_x[step_idx]]
+        x = [step_idx]
         y = [self.prey_y[step_idx]]
         self.scatterItem.setPoints(list(x), list(y))
         
@@ -342,16 +345,25 @@ class HeatMap(FigureCanvasQTAgg):
 
 class SimulationContainter(HeatMap):
 
-    def __init__(self, filename, parent=None):
+    def __init__(self, filename, stats_filename, parent=None):
         self.parent = parent
         self.filename = filename
+        self.stats_filename = stats_filename
         self.simulation = Simulation.load_from_file(self.filename)
+
+        # CURRENT ISSUE, 
+        if np.all([ep == [] for ep in self.simulation.episodes]):
+            raise Exception(f'Simulation episodes appear to be empty.\nEpisodes={self.simulation.episodes}')
+
         print('Building world ...')
         self.sim_occlusions = Cell_group_builder.get_from_name(world_name="hexagonal." + self.simulation.world_info.occlusions, name="occlusions")
         print('Finished building world')
         self.world = World.get_from_parameters_names("hexagonal", "canonical")
         self.world.set_occlusions(self.sim_occlusions)
-        stats = Simulation_statistics.load_from_sim_file_name(filename)
+        
+        #stats = self.simulation.get_stats(reward=Reward()) # Old way -> get stats from exp file
+        stats = Simulation_statistics.load_from_sim_file_name(self.filename)
+
         self.loaded_eps = [EpisodeContainer(ep, self.sim_occlusions, stats=stats_, parent=self.parent) for ep, stats_ in zip(self.simulation.episodes, stats.episode_stats)]
         exclude_stats = [attr for attr in dir(stats) if '__' in attr or attr in ['episode_stats', 'save', 'parse', 'load_from_url', 'load_from_file', 'load', 'format', 'copy']]
         sim_stat_props = [attr for attr in dir(stats) if attr not in exclude_stats]
@@ -663,9 +675,24 @@ class Example(QMainWindow):
     def open_results(self):
         file_names = QFileDialog.getOpenFileNames(self, 'Open file', '.', "Simulation results (*.json)")[0]
         hms = []
+
+        pairs = []
         for f in file_names:
-            s = SimulationContainter(f, self)
+
+            # Check we have experiment and sim
+            if 'stats' not in f:
+                dir = os.path.dirname(f)
+                fname, ext = os.path.splitext(f)
+                stats_name = os.path.join(dir, fname + '_stats' + ext)
+                if False:#not os.path.exists(stats_name):
+                    raise Exception(f'Expected stats file: {stats_name} to exist for experiment file {f}')
+                else:
+                    pairs.append((f, stats_name))
+                
+        for p in pairs:
+            s = SimulationContainter(p[0], p[1], self)
             hms.append(s)
+        
         self.display_renders(hms)
 
 

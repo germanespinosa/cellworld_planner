@@ -1,0 +1,47 @@
+#!/bin/bash
+
+mkdir -p "../simulation_results/plan_vs_thig/thig"
+mkdir -p "../simulation_results/plan_vs_thig/plan"
+
+for SPEED in 17_35 25_50 50_75 75_100 100_150; do
+    config_file="$CELLWORLD_PLANNER_CONFIG/d1k.s${SPEED}.json"
+    dst="../simulation_results/plan_vs_thig/thig/$SPEED.json"
+    if [ ! -f "$dst" ]
+    then
+      echo "$config_file - $dst"
+      $CELLWORLD_PLANNER_BIN/thig_simulation -c $config_file -o 21_05 -r $dst -ss 0 -se 100
+    fi
+    echo "creating stats for $dst"
+    $CELLWORLD_PLANNER_BIN/create_statistics -s $dst
+done
+
+
+SPEED_CONFIG="${EXPLORATION}_${PURSUE}"
+for DEPTH in 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 30 40 50 100 200 300 400 500 1000 2000 3000 4000 5000 10000; do
+    if [ "$DEPTH" -lt "1000" ]
+    then
+      DEPTH_LABEL=$DEPTH
+    else
+      DEPTH_LABEL=$(echo "$(echo "scale=0; $DEPTH/1000"|bc)k")
+    fi
+    for SPEED in 17_35 25_50 50_75 75_100 100_150; do
+      IFS='_' read -r -a array <<< "$SPEED"
+      EXPLORATION=$(echo "scale=2; ${array[0]}/100"|bc)
+      PURSUE=$(echo "scale=2; ${array[1]}/100"|bc)
+      config_file=" $CELLWORLD_PLANNER_CONFIG/d${DEPTH_LABEL}.s${SPEED}.json"
+      if [ ! -f "$config_file" ]
+      then
+        python ../python/create_simulation_config.py -pursue_speed $PURSUE -exploration_speed $EXPLORATION -simulations $DEPTH -o $config_file
+      fi
+      mkdir -p "../simulation_results/plan_vs_thig/plan/$DEPTH_LABEL"
+      dst="../simulation_results/plan_vs_thig/plan/$DEPTH_LABEL/${SPEED}.json"
+
+      if [ ! -f "$dst" ]
+      then
+        echo "$config_file - $dst"
+        $CELLWORLD_PLANNER_BIN/simulation -c $config_file -o 21_05 -r $dst -ss 0 -se 100
+      fi
+      echo "creating stats for $dst"
+        $CELLWORLD_PLANNER_BIN/create_statistics -s $dst
+    done
+done

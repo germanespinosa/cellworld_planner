@@ -1,0 +1,10 @@
+#!/bin/bash
+WORLD_STATS_FOLDER="$CELLWORLD_CACHE/world_statistics"
+
+mkdir -p $WORLD_STATS_FOLDER
+
+for FILE in $CELLWORLD_CACHE/cell_group/*.occlusions; do
+  IFS=. read configuration occlusions rest <<<"$FILE"
+  echo $occlusions
+  $CELLWORLD_PLANNER_BIN/create_world_statistics -c hexagonal -i canonical -o $occlusions -s $WORLD_STATS_FOLDER/hexagonal.$occlusions
+done

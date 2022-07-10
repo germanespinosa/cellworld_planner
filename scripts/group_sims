@@ -1,0 +1,16 @@
+#!/bin/bash
+for DEPTH in 10 11 12 13 14 15 16 17 18 19 20 30 40 50 100 200 300 400 500 1000 2000 3000 4000 5000 10000; do
+    if [ "$DEPTH" -lt "1000" ]
+    then
+      DEPTH_LABEL=$DEPTH
+    else
+      DEPTH_LABEL=$(echo "$(echo "scale=0; $DEPTH/1000"|bc)k")
+    fi
+    (
+    cd "$DEPTH_LABEL"
+    $CELLWORLD_PLANNER_PYTHON/concatenate.py "*_DMM[12]_*_JR*_experiment.json" group1_JHU.json
+    $CELLWORLD_PLANNER_PYTHON/concatenate.py "*_DMM[12]_*_SR*_experiment.json" group1_Saline.json
+    $CELLWORLD_PLANNER_PYTHON/concatenate.py "*_DMM[34]_*_JR*_experiment.json" group2_JHU.json
+    $CELLWORLD_PLANNER_PYTHON/concatenate.py "*_DMM[34]_*_SR*_experiment.json" group2_Saline.json
+    )
+done

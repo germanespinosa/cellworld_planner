@@ -234,11 +234,22 @@ class Example(QMainWindow):
         self.m_w12 = QWidget()
         self.m_w13 = QWidget()
 
+        self.r_w11 = QWidget()
+        self.r_w21 = QWidget()
+        self.r_w31 = QWidget()
+        self.r_w41 = QWidget()
+
         lay = QGridLayout(central_widget)
         lay.addWidget(self.m_w11, 0, 0)
         lay.addWidget(self.m_w12, 0, 1)
         lay.addWidget(self.m_w13, 0, 2)
         lay.setColumnStretch(1, 1)
+
+        replay_lay = QGridLayout(self.m_w12)
+        replay_lay.addWidget(self.r_w11, 0, 0)
+        replay_lay.addWidget(self.r_w21, 1, 0)
+        replay_lay.addWidget(self.r_w31, 2, 0)
+        replay_lay.addWidget(self.r_w41, 3, 0)
 
         lay = QVBoxLayout(self.m_w11)
 

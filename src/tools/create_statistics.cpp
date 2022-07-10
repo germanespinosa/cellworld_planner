@@ -12,30 +12,6 @@ using namespace std;
 using namespace cell_world;
 using namespace cell_world::planner;
 
-float logb(float a, float b)
-{
-    return log(a) / log(b);
-}
-
-float entropy(vector<float> probabilities, float base = M_E) {
-    if (probabilities.empty()) return 0;
-    float ent = 0;
-    for (auto p : probabilities){
-        if (p>0)  ent -= p * logb(p, base);
-    }
-    return ent / logb((float)probabilities.size(), base);
-}
-
-template<typename T>
-float weights_entropy(vector<T> weights, float base = M_E) {
-    if (weights.empty()) return 0;
-    auto total = sum(weights);
-    if (total == 0) return 0;
-    vector<float> probs(weights.size());
-    for (int i = 0 ; i < weights.size(); i++) probs[i] = (float)weights[i] / total ;
-    return entropy(probs);
-}
-
 float get_decision_difficulty(Move &first, Move &second) {
     if (first == -second) return 3;
     auto m = first.manhattan(second);
@@ -57,9 +33,12 @@ void create_episode_stats ( Simulation_episode &sim_episode,
             episode_stats.capture_rate += 1;
         }
         visited_cells.add(prey_cell);
-        step_stats.value = max(sim_step.prey_state.options_values);
+        step_stats.options = (float)sim_step.prey_state.options_values.size();
+        if (!sim_step.prey_state.options_values.empty()) {
+            step_stats.value = max(sim_step.prey_state.options_values);
+        }
         episode_stats.value += step_stats.value / episode_stats.length;
-        episode_stats.distance += prey_cell.location.dist(predator_cell.location);
+        episode_stats.distance += (float)prey_cell.location.dist(predator_cell.location);
         step_stats.belief_state_entropy = weights_entropy(sim_step.prey_state.belief_state);
         episode_stats.belief_state_entropy += step_stats.belief_state_entropy / episode_stats.length;
         if (sim_step.predator_state.behavior == cell_world::planner::Predator_state::Pursuing){
@@ -137,7 +116,7 @@ int main(int argc, char **argv) {
     sim_stats.episode_stats = json_cpp::Json_vector<Episode_statistics> (simulation.episodes.size());
     for (int e = 0 ; e < simulation.episodes.size(); e++) {
         auto &episode_stats = sim_stats.episode_stats[e];
-        cout << "Processing trajectories " << e << endl;
+        cout << "Processing trajectories " << e << endl << flush;
         auto &sim_episode = simulation.episodes[e];
 //        create_episode_stats (
 //               std::ref(sim_episode),

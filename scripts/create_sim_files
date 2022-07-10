@@ -6,7 +6,7 @@ mkdir -p $dst_folder
 
 export CELLWORLD_CACHE=/mnt/c/Research/cellworld_data
 
-for DEPTH in 10 11 12 13 14 15 16 17 18 19 20 30 40 50 100 200 300 400 500 1000 2000 3000 4000 5000 10000; do
+for DEPTH in 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 30 40 50 100 200 300 400 500 1000 2000 3000 4000 5000 10000; do
   if [ "$DEPTH" -lt "1000" ]
   then
     DEPTH_LABEL=$DEPTH
@@ -22,15 +22,14 @@ for DEPTH in 10 11 12 13 14 15 16 17 18 19 20 30 40 50 100 200 300 400 500 1000 
     part2=$(basename "$FILE")
     echo "- Processing $part2"
     SIM_FILE="$dst_folder/$DEPTH_LABEL/$part2"
-#    if [ ! -f "$SIM_FILE" ]
-#    then
-#      ../cmake-build-debug/create_simulation -e "$FILE" -s "$SIM_FILE" -c "$config_file"
-      echo " creating statistics..."
-      ../cmake-build-debug/create_statistics -s "$SIM_FILE"
-#    else
-#      echo " previous build found"
-#    fi
-    echo ""
+    if [ ! -f "$SIM_FILE" ]
+    then
+      $CELLWOLRD_PLANNER_BIN/create_simulation -e "$FILE" -s "$SIM_FILE" -c "$config_file"
+    else
+      echo " previous build found"
+    fi
+    echo " creating statistics..."
+    $CELLWOLRD_PLANNER_BIN/create_statistics -s "$SIM_FILE"
   done
 done
 

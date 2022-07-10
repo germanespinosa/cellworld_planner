@@ -6,7 +6,7 @@ planner::Static_data::Static_data(const World_info &world_info):
 world(World::get_from_world_info(world_info)),
 cells(world.create_cell_group()),
 map(cells),
-graph(cells),
+graph(world.create_graph()),
 start_cell(map[Coordinates(-20,0)]),
 goal_cell(map[Coordinates(20,0)]),
 paths(world.create_paths(Resources::from("paths").key(world_info.world_configuration).key(world_info.occlusions).key("astar").get_resource<Path_builder>())),
@@ -16,7 +16,8 @@ visibility(world.create_graph(Resources::from("graph").key(world_info.world_conf
 inverted_visibility(visibility.invert()),
 options(world.create_graph(Resources::from("graph").key(world_info.world_configuration).key(world_info.occlusions).key("options").get_resource<Graph_builder>())),
 predator_start_locations(world.create_cell_group(Resources::from("cell_group").key(world_info.world_configuration).key(world_info.occlusions).key("spawn_locations").get_resource<Cell_group_builder>())),
-capture(Resources::from("capture_parameters").key("default").get_resource<Capture_parameters>())
+capture(Resources::from("capture_parameters").key("default").get_resource<Capture_parameters>()),
+world_statistics(World_statistics::get_from_parameters_name(world_info.world_configuration, world_info.occlusions))
 {
     capture.cool_down = 0;
 }

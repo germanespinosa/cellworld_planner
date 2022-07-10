@@ -19,8 +19,8 @@ namespace cell_world::planner {
         Graph options;
         Cell_group predator_start_locations;
         Move_list predator_moves;
-        Move_list prey_moves;
         Simulation_parameters simulation_parameters;
         Capture_parameters capture;
+        World_statistics world_statistics;
     };
 }

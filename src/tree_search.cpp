@@ -52,10 +52,6 @@ Move planner::Tree_search::get_best_move_ucb1(const Model_public_state &state) {
     Option root(prey_current_cell,data.options);
     root.load();
     unsigned int option_cell_id;
-    for (auto &prey_option:root.options){
-        history_step.prey_state.options.push_back(prey_option.cell.id);
-    }
-    history_step.prey_state.options_values = Json_vector<float>(root.options.size(),0);
     if (belief_state.particles.empty()) {
         return data.paths.get_move(prey_current_cell,data.goal_cell);
     }
@@ -107,7 +103,12 @@ Move planner::Tree_search::get_best_move_ucb1(const Model_public_state &state) {
         best_option = &best_option->get_best_option(0);
     }
     history_step.prey_state.plan.push_back(best_option->cell.id);
-    history_step.prey_state.options_values = root.rewards;
+    for (int option_index = 0 ; option_index < root.options.size(); option_index++){
+        if (root.counters[option_index] > 0){
+            history_step.prey_state.options.push_back(root.options[option_index].cell.id);
+            history_step.prey_state.options_values.push_back(root.rewards[option_index]);
+        }
+    }
     return best_move;
 }
 
@@ -136,8 +137,16 @@ vector<float> Option::get_ucb1(float exploration) {
     for (auto c: counters) total += double(c);
     float p = 2 * log(total);
     for (unsigned int i=0; i<counters.size(); i++){
-        if (counters[i] == 0) r[i] = std::numeric_limits<float>::max();
-        else r[i] = rewards[i] + exploration * sqrt(p/float(counters[i]));
+        if (counters[i] == 0) {
+            if (exploration==0) {
+                r[i] = std::numeric_limits<float>::min();
+            } else {
+                r[i] = std::numeric_limits<float>::max();
+            }
+        }
+        else {
+            r[i] = rewards[i] + exploration * sqrt(p/float(counters[i]));
+        }
     }
     return r;
 }

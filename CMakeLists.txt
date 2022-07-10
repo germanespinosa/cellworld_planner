@@ -129,6 +129,13 @@ target_link_libraries( create_statistics
         cellworld
         params-cpp)
 
+add_executable(create_world_statistics src/tools/create_world_statistics.cpp)
+
+target_link_libraries( create_world_statistics
+        LINK_PUBLIC
+        cellworld_planner
+        cellworld
+        params-cpp)
 
 
 #tests

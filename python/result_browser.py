@@ -97,7 +97,7 @@ class Example(QMainWindow):
         clips = [ImageClip(m).set_duration(self.tick_interval) for m in frames]
         fps = 30
         concat_clip = concatenate_videoclips(clips)
-        codec = codec.split(" ")[0];
+        codec = codec.split(" ")[0]
         concat_clip.write_videofile(video_file, fps=fps, codec=codec)
 
     def init_menu(self):
@@ -230,39 +230,28 @@ class Example(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
-        self.m_w11 = QWidget()
-        self.m_w12 = QWidget()
-        self.m_w13 = QWidget()
-
-        self.r_w11 = QWidget()
-        self.r_w21 = QWidget()
-        self.r_w31 = QWidget()
-        self.r_w41 = QWidget()
+        self.left_pane = QWidget()
+        self.central_pane = QWidget()
+        self.right_pane = QWidget()
 
         lay = QGridLayout(central_widget)
-        lay.addWidget(self.m_w11, 0, 0)
-        lay.addWidget(self.m_w12, 0, 1)
-        lay.addWidget(self.m_w13, 0, 2)
+        lay.addWidget(self.left_pane, 0, 0)
+        lay.addWidget(self.central_pane, 0, 1)
+        lay.addWidget(self.right_pane, 0, 2)
         lay.setColumnStretch(1, 1)
 
-        replay_lay = QGridLayout(self.m_w12)
-        replay_lay.addWidget(self.r_w11, 0, 0)
-        replay_lay.addWidget(self.r_w21, 1, 0)
-        replay_lay.addWidget(self.r_w31, 2, 0)
-        replay_lay.addWidget(self.r_w41, 3, 0)
-
-        lay = QVBoxLayout(self.m_w11)
+        lay = QVBoxLayout(self.left_pane)
 
         self.list_gadget = QListWidget()
         lay.addWidget(self.list_gadget)
 
         self.list_gadget.currentItemChanged.connect(self.episode_selected)
 
-        lay = QVBoxLayout(self.m_w12)
+        lay = QVBoxLayout(self.central_pane)
         self.render = FigureCanvasQTAgg(self.display.fig)
         lay.addWidget(self.render)
 
-        lay = QVBoxLayout(self.m_w13)
+        lay = QVBoxLayout(self.right_pane)
 
         self.stats = QTextEdit()
         lay.addWidget(self.stats)
@@ -273,6 +262,8 @@ class Example(QMainWindow):
         self.prey_trajectory = None
         self.predator_trajectory = None
         self.current_frame = 0
+        if len(sys.argv) == 2:
+            self.load_results(sys.argv[1])
         self.show()
 
     def episode_selected(self, i: QListWidgetItem):
@@ -284,6 +275,9 @@ class Example(QMainWindow):
 
     def open_results(self):
         file_name = QFileDialog.getOpenFileName(self, 'Open file', '.', "Simulation results (*.json)")[0]
+        self.load_results(file_name)
+
+    def load_results (self, file_name):
         self.simulation = Simulation.load_from_file(file_name)
         self.world.set_occlusions(Cell_group_builder.get_from_name(world_name="hexagonal." + self.simulation.world_info.occlusions, name="occlusions"))
         self.list_gadget.addItems(["{:03d}".format(x) for x in range(len(self.simulation.episodes))])

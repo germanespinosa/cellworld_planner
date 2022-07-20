@@ -137,6 +137,21 @@ target_link_libraries( create_world_statistics
         cellworld
         params-cpp)
 
+add_executable(show_stats src/tools/show_stats.cpp)
+
+target_link_libraries( show_stats
+        LINK_PUBLIC
+        cellworld_planner
+        cellworld
+        params-cpp)
+
+add_executable(test_map_entropy src/tools/test_map_entropy.cpp)
+
+target_link_libraries( test_map_entropy
+        LINK_PUBLIC
+        cellworld_planner
+        cellworld
+        params-cpp)
 
 #tests
 

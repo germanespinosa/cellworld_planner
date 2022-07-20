@@ -80,6 +80,14 @@ class Simulation_replay(QMainWindow):
         stats = Simulation_statistics.load_from_sim_file_name(file_name)
         return sim, stats
 
+    def save_video(self):
+        self.tick_paused = True
+        video_file, codec = QFileDialog.getSaveFileName(self, 'Save video', '.', "libx265 (*.mp4);;h264 (*.mp4);;mpeg4 (*.mp4);;libx264rgb (*.mp4);;png (*.avi);;rawvideo (*.avi);;png (*.avi);;libvorbis (*.ogv);;libvpx (*.webm);;qtrle (*.mov)")
+        self.current_frame = 0
+        fps = 30
+        codec = codec.split(" ")[0];
+        self.episode_replay.save_video(video_file, codec, fps)
+
     def init_menu(self):
         exitAct = QAction('&Exit', self)
         exitAct.setShortcut('Ctrl+Q')

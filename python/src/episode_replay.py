@@ -1,18 +1,11 @@
 from .video_writer import VideoWriter
-import numpy as np
-import matplotlib
-from time import sleep
 from cellworld import *
-import sys
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
-from PyQt6.QtGui import *
 from .simulation import *
 from threading import Thread
 matplotlib.use('Qt5Agg')
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
-from moviepy.editor import *
 
 class Episode_replay_window(QMainWindow):
     def __init__(self, simulation: Simulation, episode_number:int ):
@@ -70,6 +63,7 @@ class Episode_replay(QWidget):
         self.current_episode = episode
         print("Episode selected")
         self.tick_paused = False
+        self.current_frame = 0
 
     def show_step(self, video_writer: VideoWriter = None):
         prey_state = self.current_episode[self.current_frame].prey_state
@@ -123,7 +117,7 @@ class Episode_replay(QWidget):
         self.episode_render.draw()
 
         if video_writer is not None:
-            video_writer.write_figure(self.episode_render, duration=self.tick_interval)
+            video_writer.write_figure(self.display.fig, duration=self.tick_interval)
 
     def play_pause(self, e):
         self.tick_paused = not self.tick_paused
@@ -137,9 +131,9 @@ class Episode_replay(QWidget):
         self.current_frame = 0
         frames = []
         print("Processing video")
-        video_writer = VideoWriter(video_file,self.episode_render.canvas.get_width_height(), fps)
+        video_writer = VideoWriter(video_file, self.display.fig.canvas.get_width_height(), fps)
         for i in range(len(self.current_episode)):
-            print("Frame", i, "from", len(self.current_episode))
+            print("Step", i, "of", len(self.current_episode))
             self.current_frame = i
             self.show_step(video_writer=video_writer)
         video_writer.close()

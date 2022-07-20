@@ -138,9 +138,6 @@ class DetailView(QMainWindow):
         x = [step_idx]
         y = [self.prey_y[step_idx]]
         self.scatterItem.setPoints(list(x), list(y))
-        
-
-
 
 class TableView(QTableWidget):
     def __init__(self, data, parent=None):

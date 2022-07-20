@@ -1,4 +1,8 @@
 #!/bin/bash
-export CELLWORLD_CACHE=/mnt/c/Research/cellworld_data
-../cmake-build-debug/create_lppos -o $1 > "$CELLWORLD_CACHE/cell_group/hexagonal.$1.lppo"
 
+for WORLD_NUMBER in 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19; do
+  for ENTROPY_BUCKET in 00 01 02 03 04 05 06 07 08 09 10; do
+    WORLD="${WORLD_NUMBER}_${ENTROPY_BUCKET}"
+    ../cmake-build-debug/create_lppos -o $WORLD > "$CELLWORLD_CACHE/cell_group/hexagonal.$WORLD.lppo"
+  done
+done

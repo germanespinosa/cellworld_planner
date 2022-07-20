@@ -5,7 +5,10 @@ using namespace cell_world;
 const Cell &planner::Predator::start_episode() {
     internal_state().destination_id = Not_found;
     internal_state().behavior = Predator_state::Exploring;
-    return data.predator_start_locations.random_cell();
+    if (data.predator_start_locations.empty())
+        return data.free_cells.random_cell();
+    else
+        return data.predator_start_locations.random_cell();
 }
 
 Move planner::Predator::get_move(const Model_public_state &public_state) {
@@ -17,7 +20,8 @@ Move planner::Predator::get_move(const Model_public_state &public_state) {
         internal_state.destination_id = prey_state.cell.id;
     } else {
         if (internal_state.destination_id == Not_found || internal_state.destination_id == predator_state.cell.id) { // destination reached
-            auto not_visible_destinations = data.visibility[predator_state.cell] & data.possible_destinations;
+            auto not_visible_destinations = data.visibility[predator_state.cell];
+            //if (!data.possible_destinations.empty()) not_visible_destinations = not_visible_destinations &data.possible_destinations;
             internal_state.destination_id = not_visible_destinations.random_cell().id;
             internal_state.behavior = Predator_state::Exploring;
         }

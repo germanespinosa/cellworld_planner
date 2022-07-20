@@ -37,11 +37,6 @@ int main (int argc, char **argv){
         if (cell.occluded) continue;
         for (const Cell &lppo:lppos){
             auto option_path = paths.get_path(cell, lppo);
-            if (cell.id == 137 && lppo.id == 94){
-                cout << cell << endl;
-                cout << lppo << endl;
-                cout << "here: " << option_path << endl;
-            }
             bool is_option = true;
             for (const Cell &step:option_path){
                 if (step == cell || step == lppo) continue;

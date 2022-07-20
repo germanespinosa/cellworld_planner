@@ -5,6 +5,8 @@ using namespace cell_world;
 planner::Static_data::Static_data(const World_info &world_info):
 world(World::get_from_world_info(world_info)),
 cells(world.create_cell_group()),
+free_cells(cells.free_cells()),
+occluded_cells(cells.occluded_cells()),
 map(cells),
 graph(world.create_graph()),
 start_cell(map[Coordinates(-20,0)]),

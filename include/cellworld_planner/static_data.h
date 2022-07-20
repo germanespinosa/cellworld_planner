@@ -7,6 +7,8 @@ namespace cell_world::planner {
         explicit Static_data(const World_info &);
         World world;
         Cell_group cells;
+        Cell_group free_cells;
+        Cell_group occluded_cells;
         Map map;
         Graph graph;
         const Cell &start_cell;

@@ -3,9 +3,10 @@ WORLD_STATS_FOLDER="$CELLWORLD_CACHE/world_statistics"
 
 mkdir -p $WORLD_STATS_FOLDER
 
-for FILE in $CELLWORLD_CACHE/cell_group/*.occlusions; do
-  IFS=. read configuration occlusions rest <<<"$FILE"
-#  echo $occlusions
-  $CELLWORLD_PLANNER_BIN/create_world_statistics -c hexagonal -i canonical -o $occlusions -s $WORLD_STATS_FOLDER/hexagonal.$occlusions
-  $CELLWORLD_PLANNER_BIN/show_stats -o $occlusions
+for WORLD_NUMBER in 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19; do
+  for ENTROPY_BUCKET in 00 01 02 03 04 05 06 07 08 09 10; do
+    WORLD="${WORLD_NUMBER}_${ENTROPY_BUCKET}"
+    $CELLWORLD_PLANNER_BIN/create_world_statistics -c hexagonal -i canonical -o $WORLD -s $WORLD_STATS_FOLDER/hexagonal.$WORLD
+    $CELLWORLD_PLANNER_BIN/show_stats -o $WORLD
+  done
 done

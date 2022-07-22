@@ -22,7 +22,10 @@ Move planner::Predator::get_move(const Model_public_state &public_state) {
         if (internal_state.destination_id == Not_found || internal_state.destination_id == predator_state.cell.id) { // destination reached
             auto not_visible_destinations = data.visibility[predator_state.cell];
             //if (!data.possible_destinations.empty()) not_visible_destinations = not_visible_destinations &data.possible_destinations;
-            internal_state.destination_id = not_visible_destinations.random_cell().id;
+            if (not_visible_destinations.empty())
+                internal_state.destination_id = data.free_cells.random_cell().id;
+            else
+                internal_state.destination_id = not_visible_destinations.random_cell().id;
             internal_state.behavior = Predator_state::Exploring;
         }
     }

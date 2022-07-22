@@ -75,14 +75,14 @@ Move planner::Thig_prey::get_move(const Model_public_state &state) {
     step.state = state;
     step.prey_state.capture = capture.is_captured(predator_cell, prey_cell);
     int next_cell_id = -1;
-    if (data.visibility[prey_cell].contains(predator_cell)) {
-        if (predator_cell.coordinates.x > prey_cell.coordinates.x) {
-            if ((active_route == North && predator_cell.coordinates.y > 0) ||
-                (active_route == South && predator_cell.coordinates.y < 0)) {
-                direction = Backward;
-            }
-        }
-    }
+//    if (data.visibility[prey_cell].contains(predator_cell)) {
+//        if (predator_cell.coordinates.x > prey_cell.coordinates.x) {
+//            if ((active_route == North && predator_cell.coordinates.y > 0) ||
+//                (active_route == South && predator_cell.coordinates.y < 0)) {
+//                direction = Backward;
+//            }
+//        }
+//    }
     if (prey_cell == data.start_cell) {
         direction = Forward;
         if (active_route == North){

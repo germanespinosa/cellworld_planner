@@ -1,0 +1,21 @@
+#!/bin/bash
+PRIORITY=$1
+STATUS="RUNNING"
+while [ "$STATUS" == "RUNNING" ]
+do
+  STATUS="FINISHED"
+  PROCESSES=$(sudo ps -all | grep simulation)
+  while IFS= read -r line
+  do
+    STATUS="RUNNING"
+    stringarray=($line)
+    pid="${stringarray[3]}"
+    priority="${stringarray[7]}"
+    if [ "$priority" != "$PRIORITY" ];
+    then
+      sudo sudo chrt -p --rr $PRIORITY $pid
+      date
+    fi
+  done < <(printf '%s\n' "$PROCESSES")
+  sleep 5
+done

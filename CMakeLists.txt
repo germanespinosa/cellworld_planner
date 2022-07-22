@@ -153,6 +153,21 @@ target_link_libraries( test_map_entropy
         cellworld
         params-cpp)
 
+add_executable(process_poster_data src/tools/process_poster_data.cpp)
+
+target_link_libraries( process_poster_data
+        LINK_PUBLIC
+        cellworld_planner
+        cellworld
+        params-cpp)
+
+add_executable(create_poster_worlds src/tools/create_poster_worlds.cpp)
+
+target_link_libraries( create_poster_worlds
+        LINK_PUBLIC
+        cellworld
+        params-cpp)
+
 #tests
 
 install_dependency(https://github.com/germanespinosa/catch CatchTests)

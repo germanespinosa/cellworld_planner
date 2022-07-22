@@ -1,26 +1,21 @@
 #!/bin/bash
 DEPTH=$1
-THIG_FOLDER="$CELLWORLD_PLANNER/poster/thig"
-PLAN_FOLDER="$CELLWORLD_PLANNER/poster/plan"
+PLAN_FOLDER="$CELLWORLD_PLANNER/poster/thig_final"
 
-mkdir -p "$THIG_FOLDER"
+config_file=" $CELLWORLD_PLANNER_CONFIG/d50.s75_100.json"
+
 mkdir -p "$PLAN_FOLDER"
 
-
-for WORLD_NUMBER in 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19; do
-  for ENTROPY_BUCKET in 00 01 02 03 04 05 06 07 08 09 10; do
-    WORLD="${WORLD_NUMBER}_${ENTROPY_BUCKET}"
-    echo $WORLD
-    mkdir -p "$THIG_FOLDER/${ENTROPY_BUCKET}"
-    config_file="$CELLWORLD_PLANNER_CONFIG/d1k.s75_100.json"
-    dst="$THIG_FOLDER/$ENTROPY_BUCKET/$WORLD.json"
-    if [ ! -f "$dst" ]
-    then
-      echo "$config_file - $dst"
+for d in "L" "H"; do
+  for w in "0" "1"; do
+    for c in {1..7}; do
+      WORLD="4${w}_0${c}_${d}"
+      echo "$WORLD"
+      dst="$PLAN_FOLDER/${WORLD}.json"
+      echo "$CELLWORLD_PLANNER_BIN/simulation -c $config_file -o $WORLD -r $dst -ss 0 -se 100"
+#      $CELLWORLD_PLANNER_BIN/simulation -c $config_file -o $WORLD -r $dst -ss 0 -se 100 &
       $CELLWORLD_PLANNER_BIN/thig_simulation -c $config_file -o $WORLD -r $dst -ss 0 -se 100
-    fi
-    echo "creating stats for $dst"
-    $CELLWORLD_PLANNER_BIN/create_statistics -s $dst
+    done
   done
 done
 #

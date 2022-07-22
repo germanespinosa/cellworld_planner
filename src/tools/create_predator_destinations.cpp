@@ -15,7 +15,7 @@ int main (int argc, char **argv){
     Cell_group cells = world.create_cell_group().free_cells();
     Cell_group pd;
     for (const Cell &cell:cells) {
-        if (graph[cell].size()==6){
+        if (graph.is_connected(cell,world.cells[0])){
             pd.add(cell);
         }
     }

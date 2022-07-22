@@ -1,0 +1,84 @@
+#!/bin/bash
+
+#for w in "0" "1"; do
+#  for d in "L" "H"; do
+#    if [ ! -f "$CELLWORLD_CACHE/cell_group/hexagonal.4${w}_00_${d}" ]
+#    then
+#      $CELLWORLD_PLANNER/cmake-build-debug/create_poster_worlds -cmin .25 -cmax .30 -o $CELLWORLD_CACHE/cell_group/hexagonal.4${w}_00_${d}.occlusions -s $CELLWORLD_CACHE/world_statistics/hexagonal.4${w}_01_${d} -d ${d}
+#    fi
+#    if [ ! -f "$CELLWORLD_CACHE/cell_group/hexagonal.4${w}_01_${d}" ]
+#    then
+#      $CELLWORLD_PLANNER/cmake-build-debug/create_poster_worlds -cmin .30 -cmax .35 -o $CELLWORLD_CACHE/cell_group/hexagonal.4${w}_01_${d}.occlusions -s $CELLWORLD_CACHE/world_statistics/hexagonal.4${w}_01_${d} -d ${d}
+#    fi
+#    if [ ! -f "$CELLWORLD_CACHE/cell_group/hexagonal.4${w}_02_${d}" ]
+#    then
+#      $CELLWORLD_PLANNER/cmake-build-debug/create_poster_worlds -cmin .35 -cmax .40 -o $CELLWORLD_CACHE/cell_group/hexagonal.4${w}_02_${d}.occlusions -s $CELLWORLD_CACHE/world_statistics/hexagonal.4${w}_02_${d} -d ${d}
+#    fi
+#    if [ ! -f "$CELLWORLD_CACHE/cell_group/hexagonal.4${w}_03_${d}" ]
+#    then
+#      $CELLWORLD_PLANNER/cmake-build-debug/create_poster_worlds -cmin .40 -cmax .45 -o $CELLWORLD_CACHE/cell_group/hexagonal.4${w}_03_${d}.occlusions -s $CELLWORLD_CACHE/world_statistics/hexagonal.4${w}_03_${d} -d ${d}
+#    fi
+#    if [ ! -f "$CELLWORLD_CACHE/cell_group/hexagonal.4${w}_04_${d}" ]
+#    then
+#      $CELLWORLD_PLANNER/cmake-build-debug/create_poster_worlds -cmin .45 -cmax .50 -o $CELLWORLD_CACHE/cell_group/hexagonal.4${w}_04_${d}.occlusions -s $CELLWORLD_CACHE/world_statistics/hexagonal.4${w}_04_${d} -d ${d}
+#    fi
+#    if [ ! -f "$CELLWORLD_CACHE/cell_group/hexagonal.4${w}_05_${d}" ]
+#    then
+#      $CELLWORLD_PLANNER/cmake-build-debug/create_poster_worlds -cmin .50 -cmax .55 -o $CELLWORLD_CACHE/cell_group/hexagonal.4${w}_05_${d}.occlusions -s $CELLWORLD_CACHE/world_statistics/hexagonal.4${w}_05_${d} -d ${d}
+#    fi
+#    if [ ! -f "$CELLWORLD_CACHE/cell_group/hexagonal.4${w}_06_${d}" ]
+#    then
+#      $CELLWORLD_PLANNER/cmake-build-debug/create_poster_worlds -cmin .55 -cmax .60 -o $CELLWORLD_CACHE/cell_group/hexagonal.4${w}_06_${d}.occlusions -s $CELLWORLD_CACHE/world_statistics/hexagonal.4${w}_06_${d} -d ${d}
+#    fi
+#    if [ ! -f "$CELLWORLD_CACHE/cell_group/hexagonal.4${w}_07_${d}" ]
+#    then
+#      $CELLWORLD_PLANNER/cmake-build-debug/create_poster_worlds -cmin .60 -cmax .65 -o $CELLWORLD_CACHE/cell_group/hexagonal.4${w}_07_${d}.occlusions -s $CELLWORLD_CACHE/world_statistics/hexagonal.4${w}_07_${d} -d ${d}
+#    fi
+#  done
+#done
+#for d in "L" "H"; do
+#  for w in "0" "1"; do
+#    for c in {1..7}; do
+#      mv $CELLWORLD_CACHE/cell_group/hexagonal.4${w}_0${c}_${d} $CELLWORLD_CACHE/cell_group/hexagonal.4${w}_0${c}_${d}.occlusions
+#    done
+#  done
+#done
+
+for d in "L" "H"; do
+  for w in "0" "1"; do
+    for c in {1..7}; do
+      WORLD="4${w}_0${c}_${d}"
+      echo "$WORLD"
+#      if [ ! -f "$CELLWORLD_CACHE/cell_group/hexagonal.$WORLD.predator_destinations" ]
+#      then
+        $CELLWORLD_PLANNER_BIN/create_predator_destinations -o $WORLD > "$CELLWORLD_CACHE/cell_group/hexagonal.$WORLD.predator_destinations"
+#      fi
+#      if [ ! -f "$CELLWORLD_CACHE/graph/hexagonal.$WORLD.cell_visibility" ]
+#      then
+        $CELLWORLD_PLANNER_BIN/create_visibility -o $WORLD > "$CELLWORLD_CACHE/graph/hexagonal.$WORLD.cell_visibility"
+#      fi
+#      if [ ! -f "$CELLWORLD_CACHE/paths/hexagonal.$WORLD.astar" ]
+#      then
+        $CELLWORLD_PLANNER_BIN/create_paths -o $WORLD > "$CELLWORLD_CACHE/paths/hexagonal.$WORLD.astar"
+#      fi
+#      if [ ! -f "$CELLWORLD_CACHE/cell_group/hexagonal.$WORLD.spawn_locations" ]
+#      then
+        $CELLWORLD_PLANNER_BIN/create_spawn_locations -o $WORLD > "$CELLWORLD_CACHE/cell_group/hexagonal.$WORLD.spawn_locations"
+#      fi
+#      if [ ! -f "$CELLWORLD_CACHE/cell_group/hexagonal.$WORLD.lppo" ]
+#      then
+        $CELLWORLD_PLANNER_BIN/create_lppos -o $WORLD > "$CELLWORLD_CACHE/cell_group/hexagonal.$WORLD.lppo"
+#      fi
+#      if [ ! -f "$CELLWORLD_CACHE/graph/hexagonal.$WORLD.options" ]
+#      then
+        $CELLWORLD_PLANNER_BIN/create_options -o $WORLD > "$CELLWORLD_CACHE/graph/hexagonal.$WORLD.options"
+#      fi
+    done
+  done
+done
+
+#    $CELLWORLD_PLANNER_BIN/create_spawn_locations -o $WORLD > "$CELLWORLD_CACHE/cell_group/hexagonal.$WORLD.spawn_locations"
+#    $CELLWORLD_PLANNER_BIN/create_visibility -o $WORLD > "$CELLWORLD_CACHE/graph/hexagonal.$WORLD.cell_visibility"
+#    $CELLWORLD_PLANNER_BIN/create_paths -o $WORLD > "$CELLWORLD_CACHE/paths/hexagonal.$WORLD.astar"
+#    $CELLWORLD_PLANNER_BIN/create_lppos -o $WORLD > "$CELLWORLD_CACHE/cell_group/hexagonal.$WORLD.lppo"
+#    $CELLWORLD_PLANNER_BIN/create_options -o $WORLD > "$CELLWORLD_CACHE/graph/hexagonal.$WORLD.options"

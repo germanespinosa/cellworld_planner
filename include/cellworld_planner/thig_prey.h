@@ -19,7 +19,7 @@ namespace cell_world::planner {
         const Cell &start_episode() override;
         Move get_move(const Model_public_state &) override;
         Agent_status_code update_state(const Model_public_state &) override;
-
+        Coordinates border(int x);
         Predator &predator;
         const Static_data &data;
         Route active_route;
@@ -28,5 +28,6 @@ namespace cell_world::planner {
         Cell_group_builder south_route;
         json_cpp::Json_vector<History_step> history;
         Cell_capture capture;
+        bool reactive{};
     };
 }

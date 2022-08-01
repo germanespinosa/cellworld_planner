@@ -12,6 +12,9 @@ const Cell &planner::Predator::start_episode() {
 }
 
 Move planner::Predator::get_move(const Model_public_state &public_state) {
+    if (Chance::coin_toss(data.simulation_parameters.predator_parameters.randomness)) {
+        return pick_random(data.predator_moves);
+    }
     auto &prey_state = public_state.agents_state[0];
     auto &predator_state = public_state.agents_state[1];
     auto &internal_state = this->internal_state();
@@ -55,6 +58,7 @@ Agent_status_code planner::Predator::update_state(const Model_public_state &publ
     auto &prey_state = public_state.agents_state[0];
     auto &predator_state = public_state.agents_state[1];
     auto &internal_state = this->internal_state();
+    internal_state.cell_id = predator_state.cell.id;
     if (data.visibility[predator_state.cell].contains(prey_state.cell)){ // prey is visible
         internal_state.behavior = Predator_state::Pursuing;
         internal_state.destination_id = prey_state.cell.id;

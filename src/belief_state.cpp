@@ -6,7 +6,7 @@ using namespace cell_world;
 using namespace std;
 
 planner::Dummy::Dummy(const planner::Static_data &data):
-        data(data), start_cell_id(data.start_cell.id){
+        data(data), start_cell_id(data.start_cell().id){
 }
 
 const Cell &planner::Dummy::start_episode() {
@@ -119,7 +119,7 @@ Model_state planner::Belief_state::get_root_state() {
 
 void planner::Belief_state::reset() {
     history.clear();
-    previous_prey_coordinates = data.start_cell.coordinates;
+    previous_prey_coordinates = data.start_cell().coordinates;
     particles.clear();
     if (model.state.public_state.status == Model_public_state::Status::Running) model.end_episode();
     for (int i=0;i<data.simulation_parameters.tree_search_parameters.belief_state_parameters.max_particle_creation_attempts && particles.size()<data.simulation_parameters.tree_search_parameters.belief_state_parameters.max_particle_count;i++){

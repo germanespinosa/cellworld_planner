@@ -10,11 +10,14 @@ project(cellworld_planner
 find_package(Dependencies)
 
 install_dependency(https://github.com/germanespinosa/thread_pool)
-include_directories(dependencies/thread_pool/include)
+include_directories(${dependencies_folder}/thread_pool/include)
 
 install_dependency(https://github.com/germanespinosa/cellworld Cellworld)
 install_dependency(https://github.com/germanespinosa/params-cpp Params-cpp)
-include_directories(dependencies/params-cpp/include)
+include_directories(${dependencies_folder}/params-cpp/include)
+
+install_dependency(https://github.com/germanespinosa/gauges)
+include_directories(${dependencies_folder}/gauges/include)
 
 string(APPEND CMAKE_CXX_FLAGS " -fno-strict-aliasing -pthread ")
 
@@ -29,7 +32,8 @@ set( cellworld_planner_files
         src/predator.cpp
         src/prey.cpp
         src/thig_prey.cpp
-        )
+        src/lppo.cpp
+        src/statistics.cpp)
 
 add_library(cellworld_planner ${cellworld_planner_files})
 
@@ -167,6 +171,22 @@ target_link_libraries( create_poster_worlds
         LINK_PUBLIC
         cellworld
         params-cpp)
+
+add_executable(random_world_sim src/tools/random_world_sim.cpp)
+
+target_link_libraries( random_world_sim
+        LINK_PUBLIC
+        cellworld_planner
+        cellworld
+        params-cpp)
+
+add_executable(test_progress src/tools/test_progress.cpp)
+target_link_libraries( test_progress
+        LINK_PUBLIC
+        cellworld_planner
+        cellworld
+        params-cpp)
+
 
 #tests
 

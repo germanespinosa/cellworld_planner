@@ -28,11 +28,12 @@ def entropy(labels, base=None):
 
 
 class Reward(JsonObject):
-    def __init__(self, step_cost: float = 0.0, gamma: float = 0.0, capture_cost: float = 0.0, episode_reward: float = 0.0):
+    def __init__(self, step_cost: float = 0.0, gamma: float = 0.0, capture_cost: float = 0.0, episode_reward: float = 0.0, incompleteness: float = 0.0):
         self.step_cost = step_cost
         self.gamma = gamma
         self.capture_cost = capture_cost
         self.episode_reward = episode_reward
+        self.incompleteness = incompleteness
 
 
 class Belief_state_representation(JsonList):
@@ -91,13 +92,19 @@ class Tree_search_parameters(JsonObject):
 
 
 class Predator_parameters(JsonObject):
-    def __init__(self, exploration_speed: float = 0.0, pursue_speed: float = 0.0):
+    def __init__(self, exploration_speed: float = 0.0, pursue_speed: float = 0.0, randomness: float = 0.0):
         self.exploration_speed = exploration_speed
         self.pursue_speed = pursue_speed
+        self.randomness = randomness
 
+
+class Prey_parameters(JsonObject):
+    def __init__(self, terminate_on_capture: bool = False, randomness: float = 0.0):
+        self.terminate_on_capture = terminate_on_capture
+        self.randomness = randomness
 
 class Simulation_parameters(JsonObject):
-    def __init__(self, reward: Reward = None, tree_search_parameters: Tree_search_parameters = None, predator_parameters: Predator_parameters = None):
+    def __init__(self, reward: Reward = None, tree_search_parameters: Tree_search_parameters = None, predator_parameters: Predator_parameters = None, prey_parameters: Prey_parameters = None):
         if reward:
             self.reward = reward
         else:
@@ -112,6 +119,11 @@ class Simulation_parameters(JsonObject):
             self.predator_parameters = predator_parameters
         else:
             self.predator_parameters = Predator_parameters()
+
+        if prey_parameters:
+            self.prey_parameters = prey_parameters
+        else:
+            self.prey_parameters = Prey_parameters()
 
 
 class Prey_state_history(JsonList):
@@ -143,6 +155,9 @@ class Statistics(JsonObject):
         self.length = 0.0
         self.visited_cells = 0.0
         self.survival_rate = 0.0
+        self.capture_rate = 0.0
+        self.success_rate = 0.0
+        self.time_out_rate = 0.0
         self.capture_rate = 0.0
         self.value = 0.0
         self.belief_state_entropy = 0.0

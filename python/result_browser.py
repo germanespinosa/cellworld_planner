@@ -274,7 +274,12 @@ class Example(QMainWindow):
     def open_results(self):
         file_name = QFileDialog.getOpenFileName(self, 'Open file', '.', "Simulation results (*.json)")[0]
         self.simulation = Simulation.load_from_file(file_name)
-        self.world.set_occlusions(Cell_group_builder.get_from_name(world_name="hexagonal." + self.simulation.world_info.occlusions, name="occlusions"))
+        if "random_world" in self.simulation.world_info.occlusions:
+            self.world = World.get_from_parameters(self.simulation.world_info.world_configuration, self.simulation.world_info.world_implementation)
+            occlusions_builder = Cell_group_builder.load_from_file("/".join(file_name.split("/")[:-1]) + "/occlusions")
+            self.world.set_occlusions(occlusions_builder)
+        else:
+            self.world = World.get_from_world_info(self.simulation.world_info)
         self.list_gadget.addItems(["{:03d}".format(x) for x in range(len(self.simulation.episodes))])
         stats = Simulation_statistics.load_from_sim_file_name(file_name)
         if stats is None:

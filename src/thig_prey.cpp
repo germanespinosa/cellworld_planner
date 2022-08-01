@@ -4,11 +4,18 @@ using namespace cell_world;
 using namespace std;
 
 
-Coordinates border(int x){
-    Coordinates border(x,20);
-    border.y -= abs(x);
-    if (border.y>10) border.y=10;
-    return border;
+Coordinates planner::Thig_prey::border(int x){
+    int maxy = 0;
+    if (x == data.goal_cell().coordinates.x) return data.goal_cell().coordinates;
+    if (x == data.start_cell().coordinates.x) return data.start_cell().coordinates;
+    for (const Cell &cell: data.cells){
+        if (cell.coordinates.x == x){
+            if (cell.coordinates.y > maxy){
+                maxy = cell.coordinates.y;
+            }
+        }
+    }
+    return Coordinates(x,maxy);
 }
 
 Cell_group_builder get_clean_route(const Cell_group_builder &route, const Graph &graph){
@@ -24,15 +31,18 @@ Cell_group_builder get_clean_route(const Cell_group_builder &route, const Graph 
     return clean_route;
 }
 
-planner::Thig_prey::Thig_prey(const planner::Static_data &data, Predator &predator): predator (predator), data(data), capture(data.capture, data.visibility) {
+planner::Thig_prey::Thig_prey(const planner::Static_data &data, Predator &predator): predator (predator), data(data), capture(data.simulation_parameters.capture_parameters, data.visibility) {
     Cell_group_builder tmp_north_route;
     Cell_group_builder tmp_south_route;
 
-    auto prev_north = data.start_cell;
-    auto prev_south = data.start_cell;
-    for (int x = -19; x <=19; x++){
-        if (data.map.find(border(x)) == Not_found) continue;
-        auto north_border = data.map[border(x)];
+    auto prev_north = data.start_cell();
+    auto prev_south = data.start_cell();
+    tmp_north_route.push_back(data.start_cell().id);
+    tmp_south_route.push_back(data.start_cell().id);
+    for (int x = data.start_cell().coordinates.x + 1; x <= data.goal_cell().coordinates.x; x++){
+        auto b = border(x);
+        if (data.map.find(b) == Not_found) continue;
+        auto north_border = data.map[b];
         if (!north_border.occluded) {
             auto path = data.paths.get_path(prev_north, north_border);
             for(const Cell &step:path){
@@ -56,13 +66,14 @@ planner::Thig_prey::Thig_prey(const planner::Static_data &data, Predator &predat
 }
 
 const Cell &planner::Thig_prey::start_episode() {
+    history.clear();
     if (Chance::coin_toss(.5)){
         active_route = North;
     } else {
         active_route = South;
     }
     direction = Forward;
-    return data.start_cell;
+    return data.start_cell();
 }
 
 Move planner::Thig_prey::get_move(const Model_public_state &state) {
@@ -75,35 +86,37 @@ Move planner::Thig_prey::get_move(const Model_public_state &state) {
     step.state = state;
     step.prey_state.capture = capture.is_captured(predator_cell, prey_cell);
     int next_cell_id = -1;
-//    if (data.visibility[prey_cell].contains(predator_cell)) {
-//        if (predator_cell.coordinates.x > prey_cell.coordinates.x) {
-//            if ((active_route == North && predator_cell.coordinates.y > 0) ||
-//                (active_route == South && predator_cell.coordinates.y < 0)) {
-//                direction = Backward;
-//            }
-//        }
-//    }
-    if (prey_cell == data.start_cell) {
+    if (reactive) {
+        if (data.visibility[prey_cell].contains(predator_cell)) {
+            if (predator_cell.coordinates.x > prey_cell.coordinates.x) {
+                if ((active_route == North && predator_cell.coordinates.y > 0) ||
+                    (active_route == South && predator_cell.coordinates.y < 0)) {
+                    direction = Backward;
+                }
+            }
+        }
+    }
+    if (prey_cell == data.start_cell()) {
         direction = Forward;
         if (active_route == North){
             active_route = South;
-            next_cell_id = south_route[0];
+            next_cell_id = south_route[1];
         } else {
             active_route = North;
-            next_cell_id = north_route[0];
+            next_cell_id = north_route[1];
         }
     } else {
         if (active_route == North){
             auto current_step = north_route.index_of(prey_cell.id);
             if (direction == Forward) {
                 if (current_step == north_route.size() - 1){
-                    next_cell_id = data.goal_cell.id;
+                    next_cell_id = data.goal_cell().id;
                 } else {
                     next_cell_id = north_route[current_step + 1];
                 }
             } else {
                 if (current_step == 0){
-                    next_cell_id = data.start_cell.id;
+                    next_cell_id = data.start_cell().id;
                 } else {
                     next_cell_id = north_route[current_step - 1];
                 }
@@ -112,13 +125,13 @@ Move planner::Thig_prey::get_move(const Model_public_state &state) {
             auto current_step = south_route.index_of(prey_cell.id);
             if (direction == Forward) {
                 if (current_step == south_route.size() - 1){
-                    next_cell_id = data.goal_cell.id;
+                    next_cell_id = data.goal_cell().id;
                 } else {
                     next_cell_id = south_route[current_step + 1];
                 }
             } else {
                 if (current_step == 0){
-                    next_cell_id = data.start_cell.id;
+                    next_cell_id = data.start_cell().id;
                 } else {
                     next_cell_id = south_route[current_step - 1];
                 }
@@ -138,6 +151,5 @@ Agent_status_code planner::Thig_prey::update_state(const Model_public_state &sta
     step.predator_state = predator.internal_state();
     step.predator_state.cell_id = predator_cell.id;
     step.state = state;
-    if (prey_cell==data.goal_cell) return Finished;
     return Running;
 }

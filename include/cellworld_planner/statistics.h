@@ -1,6 +1,7 @@
 #pragma once
 #include <cell_world.h>
-
+#include <cellworld_planner/simulation.h>
+#include <cellworld_planner/static_data.h>
 
 namespace cell_world::planner {
 
@@ -10,6 +11,7 @@ namespace cell_world::planner {
                 Add_optional_member(visited_cells);
                 Add_optional_member(survival_rate);
                 Add_optional_member(capture_rate);
+                Add_optional_member(time_out_rate);
                 Add_optional_member(value);
                 Add_optional_member(belief_state_entropy);
                 Add_optional_member(pursue_rate);
@@ -19,7 +21,9 @@ namespace cell_world::planner {
         float length{};
         float visited_cells{};
         float survival_rate{};
+        float time_out_rate{};
         float capture_rate{};
+        float success_rate{};
         float value{};
         float belief_state_entropy{};
         float pursue_rate{};
@@ -69,10 +73,15 @@ namespace cell_world::planner {
     };
 
     struct Simulation_statistics : Statistics {
+        Simulation_statistics() = default;
+        Simulation_statistics(Simulation &, Static_data &);
+
         Json_object_members(
                 Statistics::json_set_builder(jb);
                 Add_optional_member(episode_stats);
         )
         json_cpp::Json_vector<Episode_statistics> episode_stats;
+
+        void update();
     };
 }

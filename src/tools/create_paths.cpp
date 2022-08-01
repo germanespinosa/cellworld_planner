@@ -9,7 +9,8 @@ using namespace json_cpp;
 int main (int argc, char **argv){
     Parser p(argc,argv);
     auto occlusions = p.get(Key("-o","--occlusions"),"20_05");
-    World world = World::get_from_parameters_name("hexagonal","canonical", occlusions);
+    auto configuration = p.get(Key("-c","--configuration"),"hexagonal");
+    World world = World::get_from_parameters_name(configuration,"canonical", occlusions);
     Graph graph = world.create_graph();
     Paths paths = Paths::get_astar(graph);
     cout << paths << endl;

@@ -4,16 +4,17 @@
 namespace cell_world::planner {
 
     struct Reward : json_cpp::Json_object {
-        float step_cost;
-        float gamma;
-        float capture_cost;
-        float episode_reward;
-
+        float step_cost{};
+        float gamma{};
+        float capture_cost{};
+        float episode_reward{};
+        float incompleteness{};
         Json_object_members(
                 Add_member(step_cost);
                 Add_member(gamma);
                 Add_member(capture_cost);
                 Add_member(episode_reward);
+                Add_optional_member(incompleteness);
         )
     };
     using Belief_state_representation = json_cpp::Json_vector<unsigned int>;
@@ -58,20 +59,35 @@ namespace cell_world::planner {
     struct Predator_parameters : json_cpp::Json_object {
         float exploration_speed{};
         float pursue_speed{};
+        float randomness{};
         Json_object_members(
                 Add_member(exploration_speed);
                 Add_member(pursue_speed);
+                Add_optional_member(randomness);
         )
     };
 
+    struct Prey_parameters : json_cpp::Json_object {
+        bool terminate_on_capture{};
+        float randomness{};
+        Json_object_members(
+                Add_member(terminate_on_capture);
+                Add_member(randomness);
+        )
+    };
+
+
     struct Simulation_parameters : json_cpp::Json_object {
         Reward reward;
+        Capture_parameters capture_parameters;
         Tree_search_parameters tree_search_parameters;
         Predator_parameters predator_parameters;
+        Prey_parameters prey_parameters;
         Json_object_members(
                 Add_member(reward);
                 Add_member(tree_search_parameters);
                 Add_member(predator_parameters);
+                Add_optional_member(prey_parameters);
         )
     };
 

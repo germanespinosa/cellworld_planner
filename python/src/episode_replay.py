@@ -7,6 +7,7 @@ from threading import Thread
 matplotlib.use('Qt5Agg')
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 
+
 class Episode_replay_window(QMainWindow):
     def __init__(self, simulation: Simulation, episode_number:int ):
         self.simulation = simulation
@@ -54,9 +55,13 @@ class Episode_replay(QWidget):
     def show_episode(simulation: Simulation, episode_number: int):
         Episode_replay_window(simulation, episode_number)
 
-    def set_occlusions(self, occlusions: Cell_group_builder):
-        self.world.set_occlusions(occlusions)
-        self.display.update()
+    def set_world(self, world: World):
+        self.world = world
+        self.display = Display(self.world)
+        self.episode_render = FigureCanvasQTAgg(self.display.fig)
+        for i in reversed(range(self.central_layout.count())):
+            self.central_layout.itemAt(i).widget().setParent(None)
+        self.central_layout.addWidget(self.episode_render, 0, 0, Qt.AlignmentFlag.AlignTop)
         self.episode_render.draw()
 
     def set_episode(self, episode):

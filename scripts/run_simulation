@@ -1,16 +1,20 @@
 #!/bin/bash
 
-ss=$4
-if [ "$ss" == '' ]; then
-  ss="0"
-fi
+folder="${CELLWORLD_PLANNER}/simulation_results/random_world"
 
-se=$5
-if [ "$se" == '' ]; then
-  se="100"
-fi
-
-export CELLWORLD_CACHE=/mnt/c/Research/cellworld_data
-
-../cmake-build-debug/simulation -c $1 -o $2 -r $3 -ss $ss -se $se
-
+for w1 in {0..1}
+do
+  for w2 in {0..9}
+  do
+    for e in {0..9}
+    do
+      world="$w1${w2}_0${e}"
+      if ls $folder/square_small.${world}.* 1> /dev/null 2>&1
+      then
+        echo "${world} found"
+      else
+        $CELLWORLD_PLANNER/random_world_sim -wc square_small -o $world
+      fi
+    done
+  done
+done

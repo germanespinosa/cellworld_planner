@@ -159,7 +159,7 @@ void create_random_world(Simulation_data &data, int seed, int occlusion_count ){
     }
 }
 
-Simulation_data new_valid_simulation_data(const string &configuration, const string &occlusions){
+Simulation_data new_valid_simulation_data(const string &configuration, const string &occlusions, int random_spawn_locations){
     auto wc = Resources::from("world_configuration").key(configuration).get_resource<World_configuration>();
     auto wi = Resources::from("world_implementation").key(configuration).key("canonical").get_resource<World_implementation>();
     auto world = World(wc,wi);
@@ -184,7 +184,7 @@ Simulation_data new_valid_simulation_data(const string &configuration, const str
         data.graph = data.world.create_graph();
         tp.run([&data](){data.paths = Paths::get_astar(data.graph);});
         tp.run([&data](){data.visibility = Coordinates_visibility::create_graph(data.cells, data.world.cell_shape, data.world.cell_transformation);});
-        data.predator_start_locations = data.free_cells;
+        if (random_spawn_locations == 0) random_spawn_locations = 10;
     } else {
         data.world_info.occlusions = occlusions;
         cout << ts.to_seconds() << ": loading occlusions from " << configuration << "_" << occlusions << endl;
@@ -199,6 +199,7 @@ Simulation_data new_valid_simulation_data(const string &configuration, const str
         tp.run([&data, configuration, occlusions](){
             data.visibility = data.world.create_graph(Resources::from("graph").key(configuration).key(occlusions).key("cell_visibility").get_resource<Graph_builder>());
         });
+        if (random_spawn_locations==0)
         tp.run([&data, configuration, occlusions](){
             data.predator_start_locations = data.world.create_cell_group(Resources::from("cell_group").key(configuration).key(occlusions).key("spawn_locations").get_resource<Cell_group_builder>());
         });
@@ -212,6 +213,16 @@ Simulation_data new_valid_simulation_data(const string &configuration, const str
     data.predator_moves = data.world.connection_pattern;
     data.possible_destinations = data.free_cells;
     tp.wait_all();
+    auto min_distance = data.paths.get_steps(data.start_cell(),data.goal_cell()) / 2;
+    for (int i=0;i<random_spawn_locations;i++) {
+        while(true) {
+            auto &cell = data.free_cells.random_cell();
+            if (data.paths.get_steps(data.start_cell(),cell) >= min_distance) {
+                data.predator_start_locations.add(cell);
+                break;
+            }
+        }
+    }
     cout << ts.to_seconds() << ": creating options " << endl;
     data.options = Options::get_options(data.paths,data.lppos);
     cout << ts.to_seconds() << ": Done! " << endl;
@@ -404,11 +415,6 @@ Simulation run_thigmotaxis_simulation (Simulation_data &data, int seed_start, in
                 died++;
             }
         }
-//        for (auto &dp:prey.history){
-//           auto &step = episode.emplace_back();
-//           step.prey_state = dp.prey_state;
-//           step.predator_state = dp.predator_state;
-//        }
         model.end_episode();
         progress.set_status(" survived: " + to_string(survived) +
                             " died: " + to_string(died) +
@@ -426,10 +432,11 @@ int main(int argc, char **argv) {
     auto configuration = p.get(Key("-wc", "--world_configuration"), "hexagonal");
     auto occlusions = p.get(Key("-o", "--occlusions"), "");
     auto reward = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/reward/" + p.get(Key("-r", "--reward"), "reward1");
-    auto tree_search_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/tree_search_parameters/" + p.get(Key("-t", "--tree_search_parameters"), "100");
+    auto tree_search_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/tree_search_parameters/" + p.get(Key("-t", "--tree_search_parameters"), "1000");
     auto predator_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/predator_parameters/" + p.get(Key("-p", "--predator_parameters"), "fast_25_randomness");
     auto prey_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/prey_parameters/" + p.get(Key("-y", "--prey_parameters"), "default");
     auto capture_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/capture_parameters/" + p.get(Key("-c", "--capture_parameters"), "small");
+    auto random_spawn_locations = stoi (p.get(Key("-s", "--random_spawn_locations"), "0"));
     auto output_folder = p.get(Key("-out", "--output_folder"), "");
     if ( output_folder == "" ){
         if (occlusions.empty()) {
@@ -441,7 +448,7 @@ int main(int argc, char **argv) {
     output_folder = get_variable("CELLWORLD_PLANNER_RESULTS","../simulation_results") + "/random_world/" + output_folder;
     cout << ts.to_seconds() << ": results will be saved to " << output_folder << endl;
     fs::create_directories(output_folder);
-    auto simulation_data = new_valid_simulation_data(configuration, occlusions);
+    auto simulation_data = new_valid_simulation_data(configuration, occlusions, random_spawn_locations);
     simulation_data.occluded_cells.get_builder().save(output_folder + "/occlusions");
     simulation_data.lppos.get_builder().save(output_folder + "/lppos");
     simulation_data.world_statistics.save(output_folder + "/world_statistics");
@@ -464,7 +471,6 @@ int main(int argc, char **argv) {
         fixed_trajectory_simulation_statistics.save(output_folder + "/fixed_trajectory_simulation_stats.json");
         ft = fixed_trajectory_simulation_statistics.success_rate;
     }
-
 
     auto lppo_planning_simulation = run_planning_simulation(simulation_data, 0, 100, true);
     lppo_planning_simulation.save(output_folder + "/lppo_planning_simulation.json");

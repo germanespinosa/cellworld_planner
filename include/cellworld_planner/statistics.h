@@ -11,6 +11,7 @@ namespace cell_world::planner {
                 Add_optional_member(visited_cells);
                 Add_optional_member(survival_rate);
                 Add_optional_member(capture_rate);
+                Add_optional_member(success_rate);
                 Add_optional_member(time_out_rate);
                 Add_optional_member(value);
                 Add_optional_member(belief_state_entropy);

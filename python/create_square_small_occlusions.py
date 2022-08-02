@@ -46,6 +46,8 @@ def rr(e, n):
     final_occlusions.save(p + ".occlusions")
     final_spawn_cell_ids = Cell_group_builder()
     for id in spawn_cell_ids:
+        if id == -1:
+            continue
         if id not in final_occlusions:
             final_spawn_cell_ids.append(id)
     if len(final_spawn_cell_ids) == 0:

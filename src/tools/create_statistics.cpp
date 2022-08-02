@@ -24,14 +24,18 @@ int main(int argc, char **argv) {
     Simulation simulation;
     try {
         if (!simulation.load(simulation_file)) {
-            cout << "Simulation file not found." << endl;
+            cout << "Simulation file "  << simulation_file << " not found." << endl;
             exit(1);
         }
     } catch(...){
         cout << "Not a simulation file." << endl;
         exit(1);
     }
-    auto data = Static_data(simulation.world_info);
+    World w = World::get_from_world_info(simulation.world_info);
+    auto data = Static_data(w);
+    data.cells = w.create_cell_group();
+    data.paths = w.create_paths(Resources::from("paths").key(simulation.world_info.world_configuration).key(simulation.world_info.occlusions).key("astar").get_resource<Path_builder>());
     Simulation_statistics sim_stats(simulation, data);
     sim_stats.save(stats_file);
+    cout << "done!" << endl;
 }

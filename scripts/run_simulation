@@ -13,7 +13,9 @@ do
       then
         echo "${world} found"
       else
+        #runs the simulation
         $CELLWORLD_PLANNER_BIN/random_world_sim -wc square_small -o $world $@
+
       fi
     done
   done

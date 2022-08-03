@@ -11,6 +11,7 @@ do
       world="$w1${w2}_0${e}"
       if ls $folder/square_small.${world}.* 1> /dev/null 2>&1
       then
+        #simulation results found
         echo "${world} found"
       else
         #runs the simulation

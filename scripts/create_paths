@@ -13,7 +13,7 @@ do
   IFS='.' read -ra parts <<< "$f"
   occlusions=$(echo "${parts[1]}")
   echo $occlusions
-  ../cmake-build-debug/create_paths -c ${configuration} -o $occlusions > "$CELLWORLD_CACHE/paths/${configuration}.${occlusions}.astar"
-  ../cmake-build-debug/create_visibility -c ${configuration} -o $occlusions > "$CELLWORLD_CACHE/graph/${configuration}.${occlusions}.cell_visibility"
+  ../cmake-build-debug/create_paths -c ${configuration} -o $occlusions > "$CELLWORLD_CACHE/paths/${configuration}.${occlusions}.astar" &
+  ../cmake-build-debug/create_visibility -c ${configuration} -o $occlusions > "$CELLWORLD_CACHE/graph/${configuration}.${occlusions}.cell_visibility" &
 done
 

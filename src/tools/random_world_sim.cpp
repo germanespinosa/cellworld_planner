@@ -447,62 +447,69 @@ int main(int argc, char **argv) {
     }
     output_folder = get_variable("CELLWORLD_PLANNER_RESULTS","../simulation_results") + "/random_world/" + output_folder;
     cout << ts.to_seconds() << ": results will be saved to " << output_folder << endl;
-    fs::create_directories(output_folder);
+
     auto simulation_data = new_valid_simulation_data(configuration, occlusions, random_spawn_locations);
     simulation_data.occluded_cells.get_builder().save(output_folder + "/occlusions");
     simulation_data.lppos.get_builder().save(output_folder + "/lppos");
-    simulation_data.world_statistics.save(output_folder + "/world_statistics");
+
+
     simulation_data.simulation_parameters.reward.load(reward);
     simulation_data.simulation_parameters.tree_search_parameters.load(tree_search_parameters);
     simulation_data.simulation_parameters.predator_parameters.load(predator_parameters);
     simulation_data.simulation_parameters.prey_parameters.load(prey_parameters);
     simulation_data.simulation_parameters.capture_parameters.load(capture_parameters);
-    simulation_data.simulation_parameters.save(output_folder + "/simulation_parameters");
 
     auto planning_simulation = run_planning_simulation(simulation_data, 0, 100, false);
-    planning_simulation.save(output_folder + "/planning_simulation.json");
     Simulation_statistics planning_simulation_statistics(planning_simulation, simulation_data);
+
+    auto lppo_planning_simulation = run_planning_simulation(simulation_data, 0, 100, true);
+    Simulation_statistics lppo_planning_simulation_statistics(lppo_planning_simulation, simulation_data);
+
+    auto shortest_path_simulation= run_shortest_path_simulation(simulation_data, 0, 100);
+    shortest_path_simulation.save(output_folder + "/shortest_path_simulation.json");
+    Simulation_statistics shortest_path_simulation_statistics(shortest_path_simulation, simulation_data);
+
+    auto thigmotaxis_simulation= run_thigmotaxis_simulation(simulation_data, 0, 100, false);
+    thigmotaxis_simulation.save(output_folder + "/thigmotaxis_simulation.json");
+    Simulation_statistics thigmotaxis_simulation_statistics(thigmotaxis_simulation, simulation_data);
+
+    auto reactive_thigmotaxis_simulation= run_thigmotaxis_simulation(simulation_data, 0, 100, true);
+    reactive_thigmotaxis_simulation.save(output_folder + "/reactive_thigmotaxis_simulation.json");
+    Simulation_statistics reactive_thigmotaxis_simulation_statistics(reactive_thigmotaxis_simulation, simulation_data);
+
+    cout << "Saving Results... " << endl;
+    fs::create_directories(output_folder);
+    simulation_data.world_statistics.save(output_folder + "/world_statistics");
+    simulation_data.simulation_parameters.save(output_folder + "/simulation_parameters");
     planning_simulation_statistics.save(output_folder + "/planning_simulation_stats.json");
-    float ft = 0;
+    planning_simulation.save(output_folder + "/planning_simulation.json");
+    lppo_planning_simulation.save(output_folder + "/lppo_planning_simulation.json");
+    lppo_planning_simulation_statistics.save(output_folder + "/lppo_planning_simulation_stats.json");
+    shortest_path_simulation_statistics.save(output_folder + "/shortest_path_simulation_stats.json");
+    thigmotaxis_simulation_statistics.save(output_folder + "/thigmotaxis_simulation_stats.json");
+    reactive_thigmotaxis_simulation_statistics.save(output_folder + "/reactive_thigmotaxis_simulation_stats.json");
+
+    cout << "Survival rates:" << endl;
+    cout << " - Planning: " << planning_simulation_statistics.success_rate << endl;
     if (planning_simulation_statistics.success_rate > 0){
         auto fixed_trajectory_simulation= run_fixed_trajectory_simulation(planning_simulation, simulation_data, 0, 100);
         fixed_trajectory_simulation.save(output_folder + "/fixed_trajectory_simulation.json");
         Simulation_statistics fixed_trajectory_simulation_statistics(fixed_trajectory_simulation, simulation_data);
         fixed_trajectory_simulation_statistics.save(output_folder + "/fixed_trajectory_simulation_stats.json");
-        ft = fixed_trajectory_simulation_statistics.success_rate;
+        cout << " - Fixed successful trajectory: " << fixed_trajectory_simulation_statistics.success_rate << endl;
+    } else {
+        cout << " - Fixed successful trajectory: NO SUCCESSFUL TRAJECTORY FOUND" << endl;
     }
-
-    auto lppo_planning_simulation = run_planning_simulation(simulation_data, 0, 100, true);
-    lppo_planning_simulation.save(output_folder + "/lppo_planning_simulation.json");
-    Simulation_statistics lppo_planning_simulation_statistics(lppo_planning_simulation, simulation_data);
-    lppo_planning_simulation_statistics.save(output_folder + "/lppo_planning_simulation_stats.json");
-    float lft = 0;
+    cout << " - LPPO Planning: " << lppo_planning_simulation_statistics.success_rate << endl;
     if (lppo_planning_simulation_statistics.success_rate > 0){
         auto fixed_trajectory_simulation= run_fixed_trajectory_simulation(lppo_planning_simulation, simulation_data, 0, 100);
         fixed_trajectory_simulation.save(output_folder + "/fixed_lppo_trajectory_simulation.json");
         Simulation_statistics fixed_trajectory_simulation_statistics(fixed_trajectory_simulation, simulation_data);
         fixed_trajectory_simulation_statistics.save(output_folder + "/fixed_lppo_trajectory_simulation_stats.json");
-        lft = fixed_trajectory_simulation_statistics.success_rate;
+        cout << " - Fixed successful LPPO trajectory: " << fixed_trajectory_simulation_statistics.success_rate << endl;
+    }else {
+        cout << " - Fixed successful trajectory: NO SUCCESSFUL TRAJECTORY FOUND" << endl;
     }
-    auto shortest_path_simulation= run_shortest_path_simulation(simulation_data, 0, 100);
-    shortest_path_simulation.save(output_folder + "/shortest_path_simulation.json");
-    Simulation_statistics shortest_path_simulation_statistics(shortest_path_simulation, simulation_data);
-    shortest_path_simulation_statistics.save(output_folder + "/shortest_path_simulation_stats.json");
-
-    auto thigmotaxis_simulation= run_thigmotaxis_simulation(simulation_data, 0, 100, false);
-    thigmotaxis_simulation.save(output_folder + "/thigmotaxis_simulation.json");
-    Simulation_statistics thigmotaxis_simulation_statistics(thigmotaxis_simulation, simulation_data);
-    thigmotaxis_simulation_statistics.save(output_folder + "/thigmotaxis_simulation_stats.json");
-
-    auto reactive_thigmotaxis_simulation= run_thigmotaxis_simulation(simulation_data, 0, 100, true);
-    reactive_thigmotaxis_simulation.save(output_folder + "/reactive_thigmotaxis_simulation.json");
-    Simulation_statistics reactive_thigmotaxis_simulation_statistics(reactive_thigmotaxis_simulation, simulation_data);
-    reactive_thigmotaxis_simulation_statistics.save(output_folder + "/reactive_thigmotaxis_simulation_stats.json");
-    cout << "Survival rates:" << endl;
-    cout << " - Planning: " << planning_simulation_statistics.success_rate << endl;
-    cout << " - Fixed successful trajectory: " << ft << endl;
-    cout << " - LPPO Planning: " << lppo_planning_simulation_statistics.success_rate << endl;
-    cout << " - Fixed LPPO successful trajectory: " << lft << endl;
     cout << " - Shortest path: " << shortest_path_simulation_statistics.success_rate << endl;
     cout << " - Thigmotaxis: " << thigmotaxis_simulation_statistics.success_rate << endl;
     cout << " - Reactive thigmotaxis: " << reactive_thigmotaxis_simulation_statistics.success_rate << endl;

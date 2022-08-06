@@ -26,6 +26,8 @@ Timer ts;
 struct Simulation_data : Static_data {
     Simulation_data(World world) : Static_data(world){
         valid = new atomic<bool>;
+        start_cell_id = 0;
+        goal_cell_id = world.size()-1;
     }
     int creation_seed = -1;
     atomic<bool> *valid{};

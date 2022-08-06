@@ -25,5 +25,7 @@ namespace cell_world::planner {
         Move_list predator_moves;
         Simulation_parameters simulation_parameters;
         World_statistics world_statistics;
+        unsigned int start_cell_id;
+        unsigned int goal_cell_id;
     };
 }

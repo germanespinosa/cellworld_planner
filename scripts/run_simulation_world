@@ -2,6 +2,20 @@
 
 configuration="$1"
 world_number="$2"
+
+active_processes=0;
+
+count_processes () {
+  new_active_processes=0
+  for pid in ${pids[*]}; do
+      if ps -p $pid > /dev/null
+      then
+        new_active_processes=$((new_active_processes+1))
+      fi
+  done
+  active_processes=$((new_active_processes))
+}
+
 folder="${CELLWORLD_PLANNER}/simulation_results/random_world"
 
 for e in {0..9}
@@ -13,6 +27,13 @@ do
     echo "${world} found"
   else
     #runs the simulation
-    $CELLWORLD_PLANNER_BIN/random_world_sim -wc ${configuration} -o $world ${@:3}
+    count_processes
+    while [[ active_processes -gt  1 ]];
+    do
+      count_processes
+      sleep 1
+    done
+    $CELLWORLD_PLANNER_BIN/random_world_sim -wc ${configuration} -o $world ${@:3} &
+    pids[${e}]=$!
   fi
 done

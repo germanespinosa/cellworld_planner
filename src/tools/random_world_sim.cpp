@@ -12,6 +12,7 @@
 #include <cellworld_planner/statistics.h>
 #include <thread_pool.h>
 #include <cellworld_planner/thig_prey.h>
+#include <performance.h>
 
 namespace fs = std::filesystem;
 using namespace thread_pool;
@@ -43,6 +44,7 @@ void run_planning_episode( const Static_data &data,
                      Simulation_episode &episode,
                      unsigned int seed,
                      Gauge &pb) {
+    PERF_SCOPE("run_planning_episode");
     Chance::seed(seed);
     Model model(data.cells, data.simulation_parameters.tree_search_parameters.depth);
     Predator predator(data);
@@ -88,6 +90,7 @@ void run_planning_episode( const Static_data &data,
 }
 
 Simulation run_planning_simulation ( const Simulation_data &lppo_data, int seed_start, int seed_end, bool use_lppos = true ) {
+    PERF_SCOPE("run_planning_simulation");
     Static_data data = (Static_data)lppo_data;
     if (!use_lppos){
         data.lppos = data.free_cells;
@@ -233,7 +236,7 @@ Simulation_data new_valid_simulation_data(const string &configuration, const str
 
 Simulation run_fixed_trajectory_simulation(Simulation &planning_simulation, Simulation_data &data, int seed_start, int seed_end){
     //collect successful trajectories
-
+    PERF_SCOPE("run_fixed_trajectory_simulation");
     vector<Move_list> successful_trajectories;
     int survived=0, died=0, timed_out=0;
     for(auto &sim_episode:planning_simulation.episodes){
@@ -317,6 +320,7 @@ Simulation run_fixed_trajectory_simulation(Simulation &planning_simulation, Simu
 
 Simulation run_shortest_path_simulation(Simulation_data &data, int seed_start, int seed_end){
     //collect successful trajectories
+    PERF_SCOPE("run_shortest_path_simulation");
     int survived=0, died=0, timed_out=0;
     Gauge progress;
     progress.set_title("Shortest path");
@@ -372,6 +376,7 @@ Simulation run_shortest_path_simulation(Simulation_data &data, int seed_start, i
 }
 
 Simulation run_thigmotaxis_simulation (Simulation_data &data, int seed_start, int seed_end, bool reactive){
+    PERF_SCOPE("run_thigmotaxis_simulation");
     int survived=0, died=0, timed_out=0;
     Simulation simulation;
     simulation.world_info = data.world_info;
@@ -440,6 +445,8 @@ int main(int argc, char **argv) {
     auto capture_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/capture_parameters/" + p.get(Key("-c", "--capture_parameters"), "small");
     auto random_spawn_locations = stoi (p.get(Key("-s", "--random_spawn_locations"), "0"));
     auto output_folder = p.get(Key("-out", "--output_folder"), "");
+    int start_seed = 0;
+    int end_seed = 10;
     if ( output_folder == "" ){
         if (occlusions.empty()) {
             output_folder = configuration + "." + json_cpp::Json_date::now().to_string("%Y%m%d_%H%M");
@@ -461,21 +468,21 @@ int main(int argc, char **argv) {
     simulation_data.simulation_parameters.prey_parameters.load(prey_parameters);
     simulation_data.simulation_parameters.capture_parameters.load(capture_parameters);
 
-    auto planning_simulation = run_planning_simulation(simulation_data, 0, 100, false);
+    auto planning_simulation = run_planning_simulation(simulation_data, start_seed, end_seed, false);
     Simulation_statistics planning_simulation_statistics(planning_simulation, simulation_data);
 
-    auto lppo_planning_simulation = run_planning_simulation(simulation_data, 0, 100, true);
+    auto lppo_planning_simulation = run_planning_simulation(simulation_data, start_seed, end_seed, true);
     Simulation_statistics lppo_planning_simulation_statistics(lppo_planning_simulation, simulation_data);
 
-    auto shortest_path_simulation= run_shortest_path_simulation(simulation_data, 0, 100);
+    auto shortest_path_simulation= run_shortest_path_simulation(simulation_data, start_seed, end_seed);
     shortest_path_simulation.save(output_folder + "/shortest_path_simulation.json");
     Simulation_statistics shortest_path_simulation_statistics(shortest_path_simulation, simulation_data);
 
-    auto thigmotaxis_simulation= run_thigmotaxis_simulation(simulation_data, 0, 100, false);
+    auto thigmotaxis_simulation= run_thigmotaxis_simulation(simulation_data, start_seed, end_seed, false);
     thigmotaxis_simulation.save(output_folder + "/thigmotaxis_simulation.json");
     Simulation_statistics thigmotaxis_simulation_statistics(thigmotaxis_simulation, simulation_data);
 
-    auto reactive_thigmotaxis_simulation= run_thigmotaxis_simulation(simulation_data, 0, 100, true);
+    auto reactive_thigmotaxis_simulation= run_thigmotaxis_simulation(simulation_data, start_seed, end_seed, true);
     reactive_thigmotaxis_simulation.save(output_folder + "/reactive_thigmotaxis_simulation.json");
     Simulation_statistics reactive_thigmotaxis_simulation_statistics(reactive_thigmotaxis_simulation, simulation_data);
 
@@ -494,7 +501,7 @@ int main(int argc, char **argv) {
     cout << "Survival rates:" << endl;
     cout << " - Planning: " << planning_simulation_statistics.success_rate << endl;
     if (planning_simulation_statistics.success_rate > 0){
-        auto fixed_trajectory_simulation= run_fixed_trajectory_simulation(planning_simulation, simulation_data, 0, 100);
+        auto fixed_trajectory_simulation= run_fixed_trajectory_simulation(planning_simulation, simulation_data, start_seed, end_seed);
         fixed_trajectory_simulation.save(output_folder + "/fixed_trajectory_simulation.json");
         Simulation_statistics fixed_trajectory_simulation_statistics(fixed_trajectory_simulation, simulation_data);
         fixed_trajectory_simulation_statistics.save(output_folder + "/fixed_trajectory_simulation_stats.json");
@@ -504,7 +511,7 @@ int main(int argc, char **argv) {
     }
     cout << " - LPPO Planning: " << lppo_planning_simulation_statistics.success_rate << endl;
     if (lppo_planning_simulation_statistics.success_rate > 0){
-        auto fixed_trajectory_simulation= run_fixed_trajectory_simulation(lppo_planning_simulation, simulation_data, 0, 100);
+        auto fixed_trajectory_simulation= run_fixed_trajectory_simulation(lppo_planning_simulation, simulation_data, start_seed, end_seed);
         fixed_trajectory_simulation.save(output_folder + "/fixed_lppo_trajectory_simulation.json");
         Simulation_statistics fixed_trajectory_simulation_statistics(fixed_trajectory_simulation, simulation_data);
         fixed_trajectory_simulation_statistics.save(output_folder + "/fixed_lppo_trajectory_simulation_stats.json");

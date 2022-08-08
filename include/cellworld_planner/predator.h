@@ -2,6 +2,7 @@
 #include <cell_world.h>
 #include <cellworld_planner/simulation.h>
 #include <cellworld_planner/static_data.h>
+#include <performance.h>
 
 namespace cell_world::planner {
     struct Predator : Stateful_agent<Predator_state> {

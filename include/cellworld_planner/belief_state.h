@@ -3,6 +3,7 @@
 #include <cellworld_planner/predator.h>
 #include <cellworld_planner/static_data.h>
 #include <cellworld_planner/agents.h>
+#include <performance.h>
 #include <queue>
 
 namespace cell_world::planner {

@@ -14,6 +14,7 @@ const Cell &planner::Prey::start_episode() {
 }
 
 Move planner::Prey::get_move(const Model_public_state &public_state) {
+    PERF_SCOPE("Prey::get_move");
     auto move = mcts.get_best_move_ucb1(public_state);
     if (Chance::coin_toss(data.simulation_parameters.prey_parameters.randomness)){
         return pick_random(data.world.connection_pattern);
@@ -23,6 +24,7 @@ Move planner::Prey::get_move(const Model_public_state &public_state) {
 }
 
 Agent_status_code planner::Prey::update_state(const Model_public_state &public_state) {
+    PERF_SCOPE("Prey::update_state");
     if (public_state.status == cell_world::Model_public_state::Starting) return Agent_status_code::Running;
     mcts.record(public_state);
     auto &prey_current_cell = public_state.agents_state[PREY].cell;

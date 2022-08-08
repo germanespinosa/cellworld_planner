@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
 
 project(cellworld_planner
         VERSION 2019.1.0
@@ -19,10 +20,14 @@ include_directories(${dependencies_folder}/params-cpp/include)
 install_dependency(https://github.com/germanespinosa/gauges)
 include_directories(${dependencies_folder}/gauges/include)
 
+install_dependency(https://github.com/germanespinosa/perf-analysis PerfAnalysis)
+include_directories(${dependencies_folder}/perf-analysis/include)
+
+
 string(APPEND CMAKE_CXX_FLAGS " -fno-strict-aliasing -pthread ")
 
 include_directories(include)
-
+include_directories(include/performance)
 
 set( cellworld_planner_files
         src/planner.cpp
@@ -40,7 +45,8 @@ add_library(cellworld_planner ${cellworld_planner_files})
 target_link_libraries( cellworld_planner
         LINK_PUBLIC
         cellworld
-        params-cpp)
+        params-cpp
+        perf-analysis)
 
 add_executable(create_lppos src/tools/create_lppos.cpp)
 

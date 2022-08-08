@@ -27,25 +27,21 @@ planner::Belief_state::Belief_state(const Static_data &data):
 }
 
 void planner::Belief_state::record_state(const Model_public_state &state) {
+    PERF_SCOPE("Belief_state::record_state");
     auto &prey_state = state.agents_state[PREY];
     auto &predator_state = state.agents_state[PREDATOR];
     // if the predator is visible
     if (data.visibility[prey_state.cell].contains(predator_state.cell)){
         // then history collapses
         history = {};
-
         model.set_public_state(state);
-
-
         if (state.current_turn == PREDATOR) {
             model.update(); // if the state is post-turn, evolve the particle
         } else {
             predator.update_state(state); // lets the predator update the internal state
         }
-
         // this state becomes the root state for future particles
         root_state = model.get_state();
-
         // reset all particles
         particles.clear();
         for(int i=0;i<data.simulation_parameters.tree_search_parameters.belief_state_parameters.max_particle_count;i++) particles.push_back(root_state);
@@ -107,6 +103,7 @@ Model_state planner::Belief_state::get_particle() {
 }
 
 Model_state planner::Belief_state::get_root_state() {
+    PERF_SCOPE("Belief_state::get_root_state");
     if (root_state.public_state.agents_state.empty()) {
         model.start_episode();
         auto state = model.get_state();
@@ -118,6 +115,7 @@ Model_state planner::Belief_state::get_root_state() {
 }
 
 void planner::Belief_state::reset() {
+    PERF_SCOPE("Belief_state::reset");
     history.clear();
     previous_prey_coordinates = data.start_cell().coordinates;
     particles.clear();

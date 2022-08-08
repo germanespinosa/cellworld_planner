@@ -3,6 +3,7 @@
 #include <cellworld_planner/agents.h>
 #include <cellworld_planner/belief_state.h>
 #include <json_cpp.h>
+#include <performance.h>
 
 namespace cell_world::planner{
 

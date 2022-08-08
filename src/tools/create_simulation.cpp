@@ -1,4 +1,6 @@
 #include <chrono>
+#include <performance.h>
+
 #include <cell_world.h>
 #include <cellworld_planner/prey.h>
 #include <params_cpp.h>
@@ -146,4 +148,3 @@ int main(int argc, char **argv) {
     tp.wait_all();
     simulation.save(simulation_file);
 }
-

@@ -13,7 +13,9 @@ const Cell &planner::Predator::start_episode() {
 
 Move planner::Predator::get_move(const Model_public_state &public_state) {
     if (Chance::coin_toss(data.simulation_parameters.predator_parameters.randomness)) {
-        return pick_random(data.predator_moves);
+        auto index = rand() % data.predator_moves.size();
+        auto move =  data.predator_moves[index];
+        return move;
     }
     auto &prey_state = public_state.agents_state[0];
     auto &predator_state = public_state.agents_state[1];
@@ -39,7 +41,7 @@ Move planner::Predator::get_move(const Model_public_state &public_state) {
     int confirmed_moves = int (speed);
     float final_move_probability = speed - confirmed_moves;
     Move move(0,0);
-    for (int move_count = 0;move_count < confirmed_moves; move_count++){
+    for (int move_count = 0; move_count < confirmed_moves; move_count++){
         auto &current_predator_cell =  data.map[predator_state.cell.coordinates + move];
         move  += data.paths.get_move(current_predator_cell, data.cells[internal_state.destination_id]);
     }

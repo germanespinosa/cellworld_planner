@@ -439,7 +439,7 @@ int main(int argc, char **argv) {
     auto configuration = p.get(Key("-wc", "--world_configuration"), "hexagonal");
     auto occlusions = p.get(Key("-o", "--occlusions"), "");
     auto reward = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/reward/" + p.get(Key("-r", "--reward"), "reward1");
-    auto episode_count = stoi(p.get(Key("-t", "--tree_search_parameters"), "100"));
+    auto episode_count = stoi(p.get(Key("-e", "--episode_count"), "100"));
     auto tree_search_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/tree_search_parameters/" + p.get(Key("-t", "--tree_search_parameters"), "1000");
     auto predator_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/predator_parameters/" + p.get(Key("-p", "--predator_parameters"), "fast_25_randomness");
     auto prey_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/prey_parameters/" + p.get(Key("-y", "--prey_parameters"), "default");

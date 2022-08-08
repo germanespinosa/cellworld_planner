@@ -439,6 +439,7 @@ int main(int argc, char **argv) {
     auto configuration = p.get(Key("-wc", "--world_configuration"), "hexagonal");
     auto occlusions = p.get(Key("-o", "--occlusions"), "");
     auto reward = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/reward/" + p.get(Key("-r", "--reward"), "reward1");
+    auto episode_count = stoi(p.get(Key("-t", "--tree_search_parameters"), "100"));
     auto tree_search_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/tree_search_parameters/" + p.get(Key("-t", "--tree_search_parameters"), "1000");
     auto predator_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/predator_parameters/" + p.get(Key("-p", "--predator_parameters"), "fast_25_randomness");
     auto prey_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/prey_parameters/" + p.get(Key("-y", "--prey_parameters"), "default");
@@ -446,7 +447,16 @@ int main(int argc, char **argv) {
     auto random_spawn_locations = stoi (p.get(Key("-s", "--random_spawn_locations"), "0"));
     auto output_folder = p.get(Key("-out", "--output_folder"), "");
     int start_seed = 0;
-    int end_seed = 10;
+    int end_seed = episode_count;
+
+    bool run_planning = p.contains(Key("-rp")) || p.contains(Key("-ra"));
+    bool run_fixed_trajectory = p.contains(Key("-rf")) || p.contains(Key("-ra"));
+    bool run_lppo_planning = p.contains(Key("-rl")) || p.contains(Key("-ra"));
+    bool run_fixed_lppo_trajectory = p.contains(Key("-rfl")) || p.contains(Key("-ra"));
+    bool run_shortest_path = p.contains(Key("-rs")) || p.contains(Key("-ra"));
+    bool run_thigmotaxis = p.contains(Key("-rt")) || p.contains(Key("-ra"));
+    bool run_reactive_thigmotaxis = p.contains(Key("-rr")) || p.contains(Key("-ra"));
+
     if ( output_folder == "" ){
         if (occlusions.empty()) {
             output_folder = configuration + "." + json_cpp::Json_date::now().to_string("%Y%m%d_%H%M");
@@ -455,72 +465,120 @@ int main(int argc, char **argv) {
         }
     }
     output_folder = get_variable("CELLWORLD_PLANNER_RESULTS","../simulation_results") + "/random_world/" + output_folder;
-    cout << ts.to_seconds() << ": results will be saved to " << output_folder << endl;
 
     auto simulation_data = new_valid_simulation_data(configuration, occlusions, random_spawn_locations);
-    simulation_data.occluded_cells.get_builder().save(output_folder + "/occlusions");
-    simulation_data.lppos.get_builder().save(output_folder + "/lppos");
-
-
     simulation_data.simulation_parameters.reward.load(reward);
     simulation_data.simulation_parameters.tree_search_parameters.load(tree_search_parameters);
     simulation_data.simulation_parameters.predator_parameters.load(predator_parameters);
     simulation_data.simulation_parameters.prey_parameters.load(prey_parameters);
     simulation_data.simulation_parameters.capture_parameters.load(capture_parameters);
 
-    auto planning_simulation = run_planning_simulation(simulation_data, start_seed, end_seed, false);
-    Simulation_statistics planning_simulation_statistics(planning_simulation, simulation_data);
+    Simulation planning_simulation;
+    Simulation fixed_trajectory_simulation;
+    Simulation lppo_planning_simulation;
+    Simulation fixed_lppo_trajectory_simulation;
+    Simulation shortest_path_simulation;
+    Simulation thigmotaxis_simulation;
+    Simulation reactive_thigmotaxis_simulation;
 
-    auto lppo_planning_simulation = run_planning_simulation(simulation_data, start_seed, end_seed, true);
-    Simulation_statistics lppo_planning_simulation_statistics(lppo_planning_simulation, simulation_data);
+    if (run_planning) {
+        cout << "Running Planning Simulation" << endl;
+        planning_simulation = run_planning_simulation(simulation_data, start_seed, end_seed, false);
+        cout << endl;
+    }
+    if (run_lppo_planning) {
+        cout << "Running LPPO Planning Simulation" << endl;
+        lppo_planning_simulation = run_planning_simulation(simulation_data, start_seed, end_seed, true);
+        cout << endl;
+    }
 
-    auto shortest_path_simulation= run_shortest_path_simulation(simulation_data, start_seed, end_seed);
-    shortest_path_simulation.save(output_folder + "/shortest_path_simulation.json");
-    Simulation_statistics shortest_path_simulation_statistics(shortest_path_simulation, simulation_data);
+    if (run_shortest_path) {
+        shortest_path_simulation = run_shortest_path_simulation(simulation_data, start_seed, end_seed);
+    }
 
-    auto thigmotaxis_simulation= run_thigmotaxis_simulation(simulation_data, start_seed, end_seed, false);
-    thigmotaxis_simulation.save(output_folder + "/thigmotaxis_simulation.json");
-    Simulation_statistics thigmotaxis_simulation_statistics(thigmotaxis_simulation, simulation_data);
+    if (run_thigmotaxis) {
+        thigmotaxis_simulation = run_thigmotaxis_simulation(simulation_data, start_seed, end_seed, false);
+    }
 
-    auto reactive_thigmotaxis_simulation= run_thigmotaxis_simulation(simulation_data, start_seed, end_seed, true);
-    reactive_thigmotaxis_simulation.save(output_folder + "/reactive_thigmotaxis_simulation.json");
-    Simulation_statistics reactive_thigmotaxis_simulation_statistics(reactive_thigmotaxis_simulation, simulation_data);
-
+    if (run_reactive_thigmotaxis ) {
+        reactive_thigmotaxis_simulation = run_thigmotaxis_simulation(simulation_data, start_seed, end_seed, true);
+    }
     cout << "Saving Results... " << endl;
     fs::create_directories(output_folder);
+    //save world and simulation parameters first
+    simulation_data.occluded_cells.get_builder().save(output_folder + "/occlusions");
+    simulation_data.lppos.get_builder().save(output_folder + "/lppos");
     simulation_data.world_statistics.save(output_folder + "/world_statistics");
     simulation_data.simulation_parameters.save(output_folder + "/simulation_parameters");
-    planning_simulation_statistics.save(output_folder + "/planning_simulation_stats.json");
-    planning_simulation.save(output_folder + "/planning_simulation.json");
-    lppo_planning_simulation.save(output_folder + "/lppo_planning_simulation.json");
-    lppo_planning_simulation_statistics.save(output_folder + "/lppo_planning_simulation_stats.json");
-    shortest_path_simulation_statistics.save(output_folder + "/shortest_path_simulation_stats.json");
-    thigmotaxis_simulation_statistics.save(output_folder + "/thigmotaxis_simulation_stats.json");
-    reactive_thigmotaxis_simulation_statistics.save(output_folder + "/reactive_thigmotaxis_simulation_stats.json");
+    //save simulation and statistics
 
+    float survival_rate_planning = 0;
+    float survival_rate_fixed_trajectory = 0;
+    float survival_rate_lppo_planning = 0;
+    float survival_rate_fixed_lppo_trajectory = 0;
+    float survival_rate_shortest_path = 0;
+    float survival_rate_thigmotaxis = 0;
+    float survival_rate_reactive_thigmotaxis = 0;
+
+    if (run_planning) {
+        planning_simulation.save(output_folder + "/planning_simulation.json");
+        Simulation_statistics planning_simulation_statistics(planning_simulation, simulation_data);
+        planning_simulation_statistics.save(output_folder + "/planning_simulation_stats.json");
+        survival_rate_planning = planning_simulation_statistics.success_rate;
+        if (run_fixed_trajectory && planning_simulation_statistics.success_rate > 0){
+            fixed_trajectory_simulation = run_fixed_trajectory_simulation(planning_simulation, simulation_data, start_seed, end_seed);
+            fixed_trajectory_simulation.save(output_folder + "/fixed_trajectory_simulation.json");
+            Simulation_statistics fixed_trajectory_simulation_statistics(fixed_trajectory_simulation, simulation_data);
+            survival_rate_fixed_trajectory = fixed_trajectory_simulation_statistics.success_rate;
+            fixed_trajectory_simulation_statistics.save(output_folder + "/fixed_trajectory_simulation_stats.json");
+        }
+    }
+    if (run_lppo_planning) {
+        lppo_planning_simulation.save(output_folder + "/lppo_planning_simulation.json");
+        Simulation_statistics lppo_planning_simulation_statistics(lppo_planning_simulation, simulation_data);
+        lppo_planning_simulation_statistics.save(output_folder + "/lppo_planning_simulation_stats.json");
+        survival_rate_lppo_planning = lppo_planning_simulation_statistics.success_rate;
+        if (run_fixed_lppo_trajectory && lppo_planning_simulation_statistics.success_rate > 0){
+            fixed_trajectory_simulation = run_fixed_trajectory_simulation(lppo_planning_simulation, simulation_data, start_seed, end_seed);
+            fixed_trajectory_simulation.save(output_folder + "/fixed_lppo_trajectory_simulation.json");
+            Simulation_statistics fixed_trajectory_simulation_statistics(fixed_trajectory_simulation, simulation_data);
+            survival_rate_fixed_lppo_trajectory = fixed_trajectory_simulation_statistics.success_rate;
+            fixed_trajectory_simulation_statistics.save(output_folder + "/fixed_lppo_trajectory_simulation_stats.json");
+        }
+    }
+    if (run_shortest_path) {
+        shortest_path_simulation.save(output_folder + "/shortest_path_simulation.json");
+        Simulation_statistics shortest_path_simulation_statistics(shortest_path_simulation, simulation_data);
+        survival_rate_shortest_path = shortest_path_simulation_statistics.success_rate;
+        shortest_path_simulation_statistics.save(output_folder + "/shortest_path_simulation_stats.json");
+    }
+    if (run_thigmotaxis) {
+        thigmotaxis_simulation.save(output_folder + "/thigmotaxis_simulation.json");
+        Simulation_statistics thigmotaxis_simulation_statistics(thigmotaxis_simulation, simulation_data);
+        survival_rate_thigmotaxis = thigmotaxis_simulation_statistics.success_rate;
+        thigmotaxis_simulation_statistics.save(output_folder + "/thigmotaxis_simulation_stats.json");
+    }
+    if (run_reactive_thigmotaxis) {
+        reactive_thigmotaxis_simulation.save(output_folder + "/reactive_thigmotaxis_simulation.json");
+        Simulation_statistics reactive_thigmotaxis_simulation_statistics(reactive_thigmotaxis_simulation, simulation_data);
+        survival_rate_reactive_thigmotaxis = reactive_thigmotaxis_simulation_statistics.success_rate;
+        reactive_thigmotaxis_simulation_statistics.save(output_folder + "/reactive_thigmotaxis_simulation_stats.json");
+    }
     cout << "Survival rates:" << endl;
-    cout << " - Planning: " << planning_simulation_statistics.success_rate << endl;
-    if (planning_simulation_statistics.success_rate > 0){
-        auto fixed_trajectory_simulation= run_fixed_trajectory_simulation(planning_simulation, simulation_data, start_seed, end_seed);
-        fixed_trajectory_simulation.save(output_folder + "/fixed_trajectory_simulation.json");
-        Simulation_statistics fixed_trajectory_simulation_statistics(fixed_trajectory_simulation, simulation_data);
-        fixed_trajectory_simulation_statistics.save(output_folder + "/fixed_trajectory_simulation_stats.json");
-        cout << " - Fixed successful trajectory: " << fixed_trajectory_simulation_statistics.success_rate << endl;
-    } else {
-        cout << " - Fixed successful trajectory: NO SUCCESSFUL TRAJECTORY FOUND" << endl;
+    if (run_planning) {
+        cout << " - Planning: " << survival_rate_planning << endl;
+        if (run_fixed_trajectory) {
+            cout << " - Fixed trajectory: " << survival_rate_fixed_trajectory << endl;
+        }
     }
-    cout << " - LPPO Planning: " << lppo_planning_simulation_statistics.success_rate << endl;
-    if (lppo_planning_simulation_statistics.success_rate > 0){
-        auto fixed_trajectory_simulation= run_fixed_trajectory_simulation(lppo_planning_simulation, simulation_data, start_seed, end_seed);
-        fixed_trajectory_simulation.save(output_folder + "/fixed_lppo_trajectory_simulation.json");
-        Simulation_statistics fixed_trajectory_simulation_statistics(fixed_trajectory_simulation, simulation_data);
-        fixed_trajectory_simulation_statistics.save(output_folder + "/fixed_lppo_trajectory_simulation_stats.json");
-        cout << " - Fixed successful LPPO trajectory: " << fixed_trajectory_simulation_statistics.success_rate << endl;
-    }else {
-        cout << " - Fixed successful trajectory: NO SUCCESSFUL TRAJECTORY FOUND" << endl;
+    if (run_lppo_planning) {
+        cout << " - LPPO Planning: " << survival_rate_lppo_planning << endl;
+        if (run_fixed_lppo_trajectory) {
+            cout << " - Fixed LPPO trajectory: " << survival_rate_fixed_lppo_trajectory << endl;
+        }
     }
-    cout << " - Shortest path: " << shortest_path_simulation_statistics.success_rate << endl;
-    cout << " - Thigmotaxis: " << thigmotaxis_simulation_statistics.success_rate << endl;
-    cout << " - Reactive thigmotaxis: " << reactive_thigmotaxis_simulation_statistics.success_rate << endl;
+    if (run_shortest_path) cout << " - Shortest path: " << survival_rate_shortest_path << endl;
+    if (run_thigmotaxis) cout << " - Thigmotaxis: " << survival_rate_thigmotaxis << endl;
+    if (run_reactive_thigmotaxis) cout << " - Reactive thigmotaxis: " << survival_rate_reactive_thigmotaxis << endl;
     cout << endl << "output folder " << output_folder << endl;
 }

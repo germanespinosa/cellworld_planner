@@ -1,0 +1,18 @@
+#!/bin/bash
+
+configuration="$1"
+world_number="$2"
+folder="${CELLWORLD_PLANNER}/simulation_results/random_world"
+
+for e in {0..9}
+do
+  world="${world_number}_0${e}"
+  if ls $folder/${configuration}.${world}.* 1> /dev/null 2>&1
+  then
+    #simulation results found
+    echo "${world} found"
+  else
+    #runs the simulation
+    $CELLWORLD_PLANNER_BIN/random_world_sim -wc ${configuration} -o $world ${@:3}
+  fi
+done

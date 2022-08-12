@@ -79,16 +79,16 @@ class Simulation_replay(QMainWindow):
         self.list_gadget.clear()
         episode_list = []
         for x in range(len(self.simulation.episodes)):
-            if self.simulation_statistics.episode_stats[x].survival_rate == 1:
+            if self.simulation_statistics.episode_stats[x].success_rate == 1:
                 if self.view_successful.isChecked():
                     episode_list.append("{:03d} success".format(x))
             else:
-                if self.simulation_statistics.episode_stats[x].capture_rate > 0:
-                    if self.view_failed.isChecked():
-                        episode_list.append("{:03d} failed".format(x))
-                else:
+                if self.simulation_statistics.episode_stats[x].time_out_rate == 1:
                     if self.view_timed_out.isChecked():
                         episode_list.append("{:03d} timed_out".format(x))
+                else:
+                    if self.view_failed.isChecked():
+                        episode_list.append("{:03d} failed".format(x))
 
 
 
@@ -128,6 +128,9 @@ class Simulation_replay(QMainWindow):
         fps = 30
         codec = codec.split(" ")[0];
         self.episode_replay.save_video(video_file, codec, fps)
+
+    def show_prey_plan(self):
+        self.episode_replay.view_prey_plan = self.view_successful.isChecked()
 
     def init_menu(self):
         exitAct = QAction('&Exit', self)
@@ -175,6 +178,7 @@ class Simulation_replay(QMainWindow):
         self.view_prey_plan = QAction('Show prey plan', self, checkable=True)
         self.view_prey_plan.setChecked(False)
         self.view_prey_plan.setStatusTip('Show prey plan')
+        self.view_successful.triggered.connect(self.show_prey_plan)
 
         self.view_predator = QAction('Show predator', self, checkable=True)
         self.view_predator.setChecked(True)

@@ -15,8 +15,9 @@ using namespace thread_pool;
 
 int main(int argc, char **argv) {
     Parser p(argc, argv);
+    auto configuration = p.get(Key("-c", "--world_configuration"), "");
     auto occlusions = p.get(Key("-o","--occlusions"),"20_05");
-    auto world = World::get_from_parameters_name("hexagonal", "canonical", occlusions);
-    auto world_statistics = World_statistics::get_from_parameters_name("hexagonal",occlusions);
+    auto world = World::get_from_parameters_name(configuration, "canonical", occlusions);
+    auto world_statistics = World_statistics::get_from_parameters_name(configuration,occlusions);
     cout << occlusions << "," << world_statistics.spatial_entropy << "," << world_statistics.spatial_espinometry << "," << world_statistics.visual_entropy << "," << world_statistics.visual_espinometry << endl;
 }

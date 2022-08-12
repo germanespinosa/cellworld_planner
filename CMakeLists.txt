@@ -38,7 +38,8 @@ set( cellworld_planner_files
         src/prey.cpp
         src/thig_prey.cpp
         src/lppo.cpp
-        src/statistics.cpp)
+        src/statistics.cpp
+        src/world_creation.cpp)
 
 add_library(cellworld_planner ${cellworld_planner_files})
 
@@ -188,6 +189,14 @@ target_link_libraries( random_world_sim
 
 add_executable(test_progress src/tools/test_progress.cpp)
 target_link_libraries( test_progress
+        LINK_PUBLIC
+        cellworld_planner
+        cellworld
+        params-cpp)
+
+
+add_executable(create_occlusions src/tools/create_occlusions.cpp)
+target_link_libraries( create_occlusions
         LINK_PUBLIC
         cellworld_planner
         cellworld

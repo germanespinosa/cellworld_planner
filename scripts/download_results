@@ -1,0 +1,6 @@
+#!/bin/bash
+
+
+ #scp -i /mnt/c/Research/AWS/KEY/SIMULATION.pem -r ubuntu@ec2-3-98-142-55.ca-central-1.compute.amazonaws.com:/home/ubuntu/cellworld_planner/simulation_results /mnt/c/Research/AWS/simulation_results
+ #scp -i /mnt/c/Research/AWS/KEY/SIMULATION.pem -r ubuntu@ec2-15-223-6-27.ca-central-1.compute.amazonaws.com:/home/ubuntu/cellworld_planner/simulation_results /mnt/c/Research/AWS/simulation_results
+ #scp -i /mnt/c/Research/AWS/KEY/SIMULATION.pem -r ubuntu@ec2-3-99-221-199.ca-central-1.compute.amazonaws.com:/home/ubuntu/cellworld_planner/simulation_results /mnt/c/Research/AWS/simulation_results

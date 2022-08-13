@@ -3,7 +3,7 @@
 configuration="$1"
 folder="${CELLWORLD_PLANNER}/simulation_results/random_world"
 
-for w1 in {5..9}
+for w1 in {10..99}
 do
   for w2 in {0..9}
   do

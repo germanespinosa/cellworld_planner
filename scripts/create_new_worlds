@@ -1,0 +1,118 @@
+#!/bin/bash
+
+
+configuration=$1
+occlusions_per_entropy_bucket=$(python ../python/get_entropy_buckets_occlusion_count.py $configuration)
+
+
+(wt="1"
+for wt2 in {0..9}
+do
+  for wn in {0..9}
+  do
+    bucket_number=0
+    for oc in $occlusions_per_entropy_bucket
+    do
+      clusters_max_size=$oc
+      world_name="${wt}${wt2}${wn}_0${bucket_number}"
+      if [ ! -f $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions ]
+      then
+        echo "$CELLWORLD_PLANNER_BIN/create_occlusions -wc ${configuration} -o $oc -c ${clusters_max_size} -w $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions -ws $CELLWORLD_CACHE/world_statistics/${configuration}.${world_name} -wp $CELLWORLD_CACHE/paths/${configuration}.${world_name}.astar -wv $CELLWORLD_CACHE/graph/${configuration}.${world_name}.cell_visibility"
+        $CELLWORLD_PLANNER_BIN/create_occlusions -wc ${configuration} -o $oc -c ${clusters_max_size} -w $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions -ws $CELLWORLD_CACHE/world_statistics/${configuration}.${world_name} -wp $CELLWORLD_CACHE/paths/${configuration}.${world_name}.astar -wv $CELLWORLD_CACHE/graph/${configuration}.${world_name}.cell_visibility
+      fi
+      bucket_number=$((bucket_number + 1))
+    done
+  done
+done) &
+
+(wt="2"
+for wt2 in {0..9}
+do
+  for wn in {0..9}
+  do
+    bucket_number=0
+    for oc in $occlusions_per_entropy_bucket
+    do
+      clusters_max_size=$((oc * 75 / 100))
+      if [ "$clusters_max_size" -eq "0" ]
+      then
+        clusters_max_size="1"
+      fi
+      world_name="${wt}${wt2}${wn}_0${bucket_number}"
+      if [ ! -f $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions ]
+      then
+        echo "$CELLWORLD_PLANNER_BIN/create_occlusions -wc ${configuration} -o $oc -c ${clusters_max_size} -w $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions -ws $CELLWORLD_CACHE/world_statistics/${configuration}.${world_name} -wp $CELLWORLD_CACHE/paths/${configuration}.${world_name}.astar -wv $CELLWORLD_CACHE/graph/${configuration}.${world_name}.cell_visibility"
+        $CELLWORLD_PLANNER_BIN/create_occlusions -wc ${configuration} -o $oc -c ${clusters_max_size} -w $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions -ws $CELLWORLD_CACHE/world_statistics/${configuration}.${world_name} -wp $CELLWORLD_CACHE/paths/${configuration}.${world_name}.astar -wv $CELLWORLD_CACHE/graph/${configuration}.${world_name}.cell_visibility
+      fi
+      bucket_number=$((bucket_number + 1))
+    done
+  done
+done) &
+
+(wt="3"
+for wt2 in {0..9}
+do
+  for wn in {0..9}
+  do
+    bucket_number=0
+    for oc in $occlusions_per_entropy_bucket
+    do
+      clusters_max_size=$((oc * 50 / 100))
+      if [ "$clusters_max_size" -eq "0" ]
+      then
+        clusters_max_size="1"
+      fi
+      world_name="${wt}${wt2}${wn}_0${bucket_number}"
+      if [ ! -f $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions ]
+      then
+        echo "$CELLWORLD_PLANNER_BIN/create_occlusions -wc ${configuration} -o $oc -c ${clusters_max_size} -w $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions -ws $CELLWORLD_CACHE/world_statistics/${configuration}.${world_name} -wp $CELLWORLD_CACHE/paths/${configuration}.${world_name}.astar -wv $CELLWORLD_CACHE/graph/${configuration}.${world_name}.cell_visibility"
+        $CELLWORLD_PLANNER_BIN/create_occlusions -wc ${configuration} -o $oc -c ${clusters_max_size} -w $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions -ws $CELLWORLD_CACHE/world_statistics/${configuration}.${world_name} -wp $CELLWORLD_CACHE/paths/${configuration}.${world_name}.astar -wv $CELLWORLD_CACHE/graph/${configuration}.${world_name}.cell_visibility
+      fi
+      bucket_number=$((bucket_number + 1))
+    done
+  done
+done) &
+
+(wt="4"
+for wt2 in {0..9}
+do
+  for wn in {0..9}
+  do
+    bucket_number=0
+    for oc in $occlusions_per_entropy_bucket
+    do
+      clusters_max_size=$((oc * 25 / 100))
+      if [ "$clusters_max_size" -eq "0" ]
+      then
+        clusters_max_size="1"
+      fi
+      world_name="${wt}${wt2}${wn}_0${bucket_number}"
+      if [ ! -f $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions ]
+      then
+        echo "$CELLWORLD_PLANNER_BIN/create_occlusions -wc ${configuration} -o $oc -c ${clusters_max_size} -w $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions -ws $CELLWORLD_CACHE/world_statistics/${configuration}.${world_name} -wp $CELLWORLD_CACHE/paths/${configuration}.${world_name}.astar -wv $CELLWORLD_CACHE/graph/${configuration}.${world_name}.cell_visibility"
+        $CELLWORLD_PLANNER_BIN/create_occlusions -wc ${configuration} -o $oc -c ${clusters_max_size} -w $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions -ws $CELLWORLD_CACHE/world_statistics/${configuration}.${world_name} -wp $CELLWORLD_CACHE/paths/${configuration}.${world_name}.astar -wv $CELLWORLD_CACHE/graph/${configuration}.${world_name}.cell_visibility
+      fi
+      bucket_number=$((bucket_number + 1))
+    done
+  done
+done) &
+
+(wt="5"
+for wt2 in {0..9}
+do
+  for wn in {0..9}
+  do
+    bucket_number=0
+    for oc in $occlusions_per_entropy_bucket
+    do
+      clusters_max_size=1
+      world_name="${wt}${wt2}${wn}_0${bucket_number}"
+      if [ ! -f $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions ]
+      then
+        echo "$CELLWORLD_PLANNER_BIN/create_occlusions -wc ${configuration} -o $oc -c ${clusters_max_size} -w $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions -ws $CELLWORLD_CACHE/world_statistics/${configuration}.${world_name} -wp $CELLWORLD_CACHE/paths/${configuration}.${world_name}.astar -wv $CELLWORLD_CACHE/graph/${configuration}.${world_name}.cell_visibility"
+        $CELLWORLD_PLANNER_BIN/create_occlusions -wc ${configuration} -o $oc -c ${clusters_max_size} -w $CELLWORLD_CACHE/cell_group/${configuration}.${world_name}.occlusions -ws $CELLWORLD_CACHE/world_statistics/${configuration}.${world_name} -wp $CELLWORLD_CACHE/paths/${configuration}.${world_name}.astar -wv $CELLWORLD_CACHE/graph/${configuration}.${world_name}.cell_visibility
+      fi
+      bucket_number=$((bucket_number + 1))
+    done
+  done
+done) &

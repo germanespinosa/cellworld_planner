@@ -24,7 +24,7 @@ namespace cell_world::planner{
         if (seed == -1){
             seed = time(0)*thread_pool::worker_id;
         }
-        Chance::seed(seed);
+        Chance::seed(seed * time(0));
         auto cells = world.create_cell_group();
         auto map = Map(cells);
         while (ready == -1) {

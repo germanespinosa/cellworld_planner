@@ -2,6 +2,8 @@ import glob
 from cellworld import *
 from src import *
 from os.path import exists
+import os
+
 
 planning = [0.0 for x in range(10)]
 lppo_planning = [0.0 for x in range(10)]
@@ -11,51 +13,62 @@ shortest_path = [0.0 for x in range(10)]
 thigmotaxis_trajectory = [0.0 for x in range(10)]
 reactive_thigmotaxis_trajectory = [0.0 for x in range(10)]
 
-metric = "capture_rate"
+metrics = []
+sim_stats = vars(Simulation_statistics())
+for metric in sim_stats:
+    if isinstance(sim_stats[metric], float):
+        metrics.append(metric)
 
-print("folder", "entropy_bucket", "planning_simulation", "fixed_trajectory_simulation", "lppo_planning_simulation", "fixed_lppo_trajectory_simulation", "thigmotaxis_simulation", "reactive_thigmotaxis_simulation", "shortest_path_simulation")
-for x in glob.glob("*"):
-    if "zip" not in x:
-        if len(x.split(".")) == 1:
-            continue
-        world = x.split(".")[1]
-        entropy_bucket = world.split("_")[1]
-        planning_simulation_success_rate = "n/a"
-        if exists(x+"/planning_simulation_stats.json"):
-            planning_simulation = Simulation_statistics.load_from_file(x+"/planning_simulation_stats.json")
-            planning_simulation_success_rate = getattr(planning_simulation, metric)
 
-        fixed_trajectory_simulation_success_rate = "n/a"
-        if exists(x+"/fixed_trajectory_simulation_stats.json"):
-            fixed_trajectory_simulation = Simulation_statistics.load_from_file(x+"/fixed_trajectory_simulation_stats.json")
-            fixed_trajectory_simulation_success_rate = getattr(fixed_trajectory_simulation, metric)
+def write_metrics(file, sim_type, world_number, entropy_bucket, stats_file, metrics):
+    print(world_number, entropy_bucket, sim_type)
+    simulation_statistics = vars(Simulation_statistics.load_from_file(stats_file))
+    file.write(sim_type)
+    file.write(",")
+    file.write(world_number)
+    file.write(",")
+    file.write(entropy_bucket)
+    for metric in metrics:
+        results_file.write(",")
+        results_file.write(str(simulation_statistics[metric]))
+    results_file.write("\n")
 
-        lppo_planning_simulation_success_rate = "n/a"
-        if exists(x+"/lppo_planning_simulation_stats.json"):
-            lppo_planning_simulation = Simulation_statistics.load_from_file(x+"/lppo_planning_simulation_stats.json")
-            lppo_planning_simulation_success_rate = getattr(lppo_planning_simulation, metric)
 
-        fixed_lppo_trajectory_simulation_success_rate = "n/a"
-        if exists(x+"/fixed_lppo_trajectory_simulation_stats.json"):
-            fixed_lppo_trajectory_simulation = Simulation_statistics.load_from_file(x+"/fixed_lppo_trajectory_simulation_stats.json")
-            fixed_lppo_trajectory_simulation_success_rate = getattr(fixed_lppo_trajectory_simulation, metric)
+with open("results.csv", "w") as results_file:
+    results_file.write("sim_type, world_number, entropy_bucket")
+    for metric in metrics:
+        results_file.write(",")
+        results_file.write(metric)
+    results_file.write("\n")
 
-        thigmotaxis_simulation_success_rate = "n/a"
-        if exists(x+"/thigmotaxis_simulation_stats.json"):
-            thigmotaxis_simulation = Simulation_statistics.load_from_file(x+"/thigmotaxis_simulation_stats.json")
-            thigmotaxis_simulation_success_rate = getattr(thigmotaxis_simulation, metric)
+    for x in glob.glob("*"):
+        if os.path.isdir(x):
+            if len(x.split(".")) == 1:
+                continue
+            world = x.split(".")[1]
+            world_number = world.split("_")[0]
+            entropy_bucket = world.split("_")[1]
+            if exists(x + "/planning_simulation_stats.json"):
+                write_metrics(results_file, "POMCP", world_number, entropy_bucket, x + "/planning_simulation_stats.json", metrics)
 
-        reactive_thigmotaxis_simulation_success_rate = "n/a"
-        if exists(x+"/reactive_thigmotaxis_simulation_stats.json"):
-            reactive_thigmotaxis_simulation = Simulation_statistics.load_from_file(x+"/reactive_thigmotaxis_simulation_stats.json")
-            reactive_thigmotaxis_simulation_success_rate = getattr(reactive_thigmotaxis_simulation, metric)
+            if exists(x + "/fixed_trajectory_simulation_stats.json"):
+                write_metrics(results_file, "FIXED_POMCP_TRAJECTORY", world_number, entropy_bucket, x + "/fixed_trajectory_simulation_stats.json", metrics)
 
-        shortest_path_simulation_success_rate = "n/a"
-        if exists(x+"/shortest_path_simulation_stats.json"):
-            shortest_path_simulation = Simulation_statistics.load_from_file(x+"/shortest_path_simulation_stats.json")
-            reactive_thigmotaxis_simulation_success_rate = getattr(shortest_path_simulation, metric)
+            if exists(x + "/lppo_planning_simulation_stats.json"):
+                write_metrics(results_file, "LPPO", world_number, entropy_bucket, x + "/lppo_planning_simulation_stats.json", metrics)
 
-        print(x, entropy_bucket, planning_simulation_success_rate, fixed_trajectory_simulation_success_rate, lppo_planning_simulation_success_rate, fixed_lppo_trajectory_simulation_success_rate, thigmotaxis_simulation_success_rate, reactive_thigmotaxis_simulation_success_rate, shortest_path_simulation_success_rate)
+            if exists(x+"/fixed_lppo_trajectory_simulation_stats.json"):
+                write_metrics(results_file, "FIXED_LPPO_TRAJECTORY", world_number, entropy_bucket, x + "/fixed_lppo_trajectory_simulation_stats.json", metrics)
+
+            if exists(x+"/thigmotaxis_simulation_stats.json"):
+                write_metrics(results_file, "THIGMOTAXIS", world_number, entropy_bucket, x + "/thigmotaxis_simulation_stats.json", metrics)
+
+            if exists(x+"/reactive_thigmotaxis_simulation_stats.json"):
+                write_metrics(results_file, "REACTIVE_THIGMOTAXIS", world_number, entropy_bucket, x + "/reactive_thigmotaxis_simulation_stats.json", metrics)
+
+            if exists(x+"/shortest_path_simulation_stats.json"):
+                write_metrics(results_file, "ASTAR", world_number, entropy_bucket, x + "/shortest_path_simulation_stats.json", metrics)
+
 
 
 

@@ -26,7 +26,7 @@ for world_metric in world_stats:
         world_metrics.append(world_metric)
 
 def write_metrics(file, sim_type, clustering, world_number, entropy_bucket, stats_file, metrics, world_stats, world_metrics):
-    print(world_number, entropy_bucket, sim_type)
+    print(clustering, world_number, entropy_bucket, sim_type)
     simulation_statistics = vars(Simulation_statistics.load_from_file(stats_file))
     file.write(sim_type)
     file.write(",")
@@ -45,7 +45,7 @@ def write_metrics(file, sim_type, clustering, world_number, entropy_bucket, stat
 
 
 with open("results.csv", "w") as results_file:
-    results_file.write("sim_type, clustering, world_number, entropy_bucket")
+    results_file.write("sim_type,clustering,world_number,entropy_bucket")
 
     for world_metric in world_metrics:
         results_file.write(",")

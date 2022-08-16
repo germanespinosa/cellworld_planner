@@ -20,7 +20,7 @@ for metric in sim_stats:
         metrics.append(metric)
 
 
-def write_metrics(file, sim_type, world_number, entropy_bucket, stats_file, metrics):
+def write_metrics(file, sim_type, clustering, world_number, entropy_bucket, stats_file, metrics):
     print(world_number, entropy_bucket, sim_type)
     simulation_statistics = vars(Simulation_statistics.load_from_file(stats_file))
     file.write(sim_type)
@@ -48,26 +48,36 @@ with open("results.csv", "w") as results_file:
             world = x.split(".")[1]
             world_number = world.split("_")[0]
             entropy_bucket = world.split("_")[1]
+            clustering = "no_limit"
+            if world_number[0] == 2:
+                clustering = "75%"
+            elif world_number[0] == 3:
+                clustering = "50%"
+            elif world_number[0] == 4:
+                clustering = "25%"
+            elif world_number[0] == 5:
+                clustering = "1"
+
             if exists(x + "/planning_simulation_stats.json"):
-                write_metrics(results_file, "POMCP", world_number, entropy_bucket, x + "/planning_simulation_stats.json", metrics)
+                write_metrics(results_file, "POMCP", clustering, world_number, entropy_bucket, x + "/planning_simulation_stats.json", metrics)
 
             if exists(x + "/fixed_trajectory_simulation_stats.json"):
-                write_metrics(results_file, "FIXED_POMCP_TRAJECTORY", world_number, entropy_bucket, x + "/fixed_trajectory_simulation_stats.json", metrics)
+                write_metrics(results_file, "FIXED_POMCP_TRAJECTORY", clustering, world_number, entropy_bucket, x + "/fixed_trajectory_simulation_stats.json", metrics)
 
             if exists(x + "/lppo_planning_simulation_stats.json"):
-                write_metrics(results_file, "LPPO", world_number, entropy_bucket, x + "/lppo_planning_simulation_stats.json", metrics)
+                write_metrics(results_file, "LPPO", clustering, world_number, entropy_bucket, x + "/lppo_planning_simulation_stats.json", metrics)
 
             if exists(x+"/fixed_lppo_trajectory_simulation_stats.json"):
-                write_metrics(results_file, "FIXED_LPPO_TRAJECTORY", world_number, entropy_bucket, x + "/fixed_lppo_trajectory_simulation_stats.json", metrics)
+                write_metrics(results_file, "FIXED_LPPO_TRAJECTORY", clustering, world_number, entropy_bucket, x + "/fixed_lppo_trajectory_simulation_stats.json", metrics)
 
             if exists(x+"/thigmotaxis_simulation_stats.json"):
-                write_metrics(results_file, "THIGMOTAXIS", world_number, entropy_bucket, x + "/thigmotaxis_simulation_stats.json", metrics)
+                write_metrics(results_file, "THIGMOTAXIS", clustering, world_number, entropy_bucket, x + "/thigmotaxis_simulation_stats.json", metrics)
 
             if exists(x+"/reactive_thigmotaxis_simulation_stats.json"):
-                write_metrics(results_file, "REACTIVE_THIGMOTAXIS", world_number, entropy_bucket, x + "/reactive_thigmotaxis_simulation_stats.json", metrics)
+                write_metrics(results_file, "REACTIVE_THIGMOTAXIS", clustering, world_number, entropy_bucket, x + "/reactive_thigmotaxis_simulation_stats.json", metrics)
 
             if exists(x+"/shortest_path_simulation_stats.json"):
-                write_metrics(results_file, "ASTAR", world_number, entropy_bucket, x + "/shortest_path_simulation_stats.json", metrics)
+                write_metrics(results_file, "ASTAR", clustering, world_number, entropy_bucket, x + "/shortest_path_simulation_stats.json", metrics)
 
 
 

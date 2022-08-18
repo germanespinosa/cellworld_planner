@@ -458,13 +458,13 @@ int main(int argc, char **argv) {
     bool run_reactive_thigmotaxis = p.contains(Key("-rr")) || p.contains(Key("-ra"));
 
     if ( output_folder == "" ){
-        if (occlusions.empty()) {
-            output_folder = configuration + "." + json_cpp::Json_date::now().to_string("%Y%m%d_%H%M");
-        } else {
-            output_folder = configuration + "." + occlusions + "." + json_cpp::Json_date::now().to_string("%Y%m%d_%H%M");
-        }
+        output_folder = get_variable("CELLWORLD_PLANNER_RESULTS","../simulation_results") + "/random_world/";
     }
-    output_folder = get_variable("CELLWORLD_PLANNER_RESULTS","../simulation_results") + "/random_world/" + output_folder;
+    if (occlusions.empty()) {
+        output_folder += configuration + "." + json_cpp::Json_date::now().to_string("%Y%m%d_%H%M");
+    } else {
+        output_folder += configuration + "." + occlusions + "." + json_cpp::Json_date::now().to_string("%Y%m%d_%H%M");
+    }
 
     auto simulation_data = new_valid_simulation_data(configuration, occlusions, random_spawn_locations);
     simulation_data.simulation_parameters.reward.load(reward);

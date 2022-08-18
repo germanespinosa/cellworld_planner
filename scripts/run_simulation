@@ -1,9 +1,10 @@
 #!/bin/bash
 
 configuration="$1"
-folder="${CELLWORLD_PLANNER}/simulation_results/random_world"
+folder="$2"
+folder="${CELLWORLD_PLANNER}/simulation_results/$2"
 
-for w1 in {490..499}
+for w1 in {100..599}
 do
   for e in {0..9}
   do
@@ -14,7 +15,7 @@ do
       echo "${world} found"
     else
       #runs the simulation
-      $CELLWORLD_PLANNER_BIN/random_world_sim -wc ${configuration} -o $world ${@:2}
+      $CELLWORLD_PLANNER_BIN/random_world_sim -wc ${configuration} -o $world ${@:3} -out $folder
 
     fi
   done

@@ -3,7 +3,7 @@ from cellworld import *
 from src import *
 from os.path import exists
 import os
-
+import sys
 
 planning = [0.0 for x in range(10)]
 lppo_planning = [0.0 for x in range(10)]
@@ -33,10 +33,17 @@ def write_metrics(file, sim_type, branches, clustering, world_number, entropy_bu
         line += ",%f" % (world_stats[world_metric],)
     for metric in metrics:
         line += ",%f" % (simulation_statistics[metric],)
-    return line, simulation_statistics["success_rate"]
+    #discounts time_outs
+    adjusted_success_rate = simulation_statistics["success_rate"] / (1-simulation_statistics["time_out_rate"])
+    line += ",%f" % adjusted_success_rate
+    return line, adjusted_success_rate
 
 
-with open("results.csv", "w") as results_file:
+results_file = "results.csv"
+if len(sys.argv) > 1:
+    results_file = sys.argv[1]
+
+with open(results_file, "w") as results_file:
     results_file.write("sim_type,branches_sampled,clustering,world_number,entropy_bucket")
 
     for world_metric in world_metrics:
@@ -46,7 +53,7 @@ with open("results.csv", "w") as results_file:
     for metric in metrics:
         results_file.write(",")
         results_file.write(metric)
-    results_file.write(",best_model_free_algorithm,planning_benefit,lppo_benefit\n")
+    results_file.write(",adjusted_success_rate,best_model_free_algorithm,best_model_free_algorithm_success_rate,planning_benefit,lppo_benefit\n")
 
     for x in glob.glob("*"):
         if os.path.isdir(x):
@@ -87,11 +94,6 @@ with open("results.csv", "w") as results_file:
                     best_model_free_algorithm_success_rate = success_rate
                     best_model_free_algorithm = "FIXED_POMCP_TRAJECTORY"
 
-            if exists(x + "/lppo_planning_simulation_stats.json") and exists(x + "/lppo_planning_simulation.json"):
-                line, success_rate = write_metrics(results_file, "LPPO", branches, clustering, world_number, entropy_bucket,  x + "/lppo_planning_simulation_stats.json", metrics, world_stats, world_metrics)
-                lines.append(line)
-                lppo_success_rate = success_rate
-
             if exists(x+"/fixed_lppo_trajectory_simulation_stats.json") and exists(x+"/fixed_lppo_trajectory_simulation.json"):
                 line, success_rate = write_metrics(results_file, "FIXED_LPPO_TRAJECTORY", branches, clustering, world_number, entropy_bucket,  x + "/fixed_lppo_trajectory_simulation_stats.json", metrics, world_stats, world_metrics)
                 lines.append(line)
@@ -118,5 +120,10 @@ with open("results.csv", "w") as results_file:
                 lines.append(line)
                 pomcp_success_rate = success_rate
 
-            completed_lines = [line + ",%s,%f,%f\n" % (best_model_free_algorithm, pomcp_success_rate - best_model_free_algorithm_success_rate, lppo_success_rate - best_model_free_algorithm_success_rate) for line in lines]
+            if exists(x + "/lppo_planning_simulation_stats.json") and exists(x + "/lppo_planning_simulation.json"):
+                line, success_rate = write_metrics(results_file, "LPPO", branches, clustering, world_number, entropy_bucket,  x + "/lppo_planning_simulation_stats.json", metrics, world_stats, world_metrics)
+                lines.append(line)
+                lppo_success_rate = success_rate
+
+            completed_lines = [line + ",%s,%f,%f,%f\n" % (best_model_free_algorithm, best_model_free_algorithm_success_rate, pomcp_success_rate - best_model_free_algorithm_success_rate, lppo_success_rate - best_model_free_algorithm_success_rate) for line in lines]
             results_file.writelines(completed_lines)

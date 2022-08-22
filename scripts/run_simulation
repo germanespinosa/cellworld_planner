@@ -19,7 +19,7 @@ while IFS= read -r line; do
     active_workers=$(jobs -p | wc -l)
     while (( active_workers>=worker_count))
     do
-        sleep 1
+        sleep .1
         active_workers=$(jobs -p | wc -l)
     done
       echo "launching $CELLWORLD_PLANNER_BIN/random_world_sim -wc ${configuration} -o $world ${@:2} -out $folder"

@@ -1,22 +1,39 @@
 #!/bin/bash
 
-configuration="$1"
-folder="$2"
-folder="${CELLWORLD_PLANNER}/simulation_results/$2"
+folder="${CELLWORLD_PLANNER}/simulation_results/$1"
 
-for w1 in {100..599}
-do
-  for e in {0..9}
-  do
-    world="${w1}_0${e}"
-    if ls $folder/${configuration}.${world}.* 1> /dev/null 2>&1
-    then
-      #simulation results found
-      echo "${world} found"
-    else
-      #runs the simulation
-      $CELLWORLD_PLANNER_BIN/random_world_sim -wc ${configuration} -o $world ${@:3} -out $folder
-
-    fi
-  done
+worker_count=$(getconf _NPROCESSORS_ONLN)
+jobs=()
+sim_count=0
+while IFS= read -r line; do
+  stringarray=($line)
+  configuration="${stringarray[0]}"
+  world="${stringarray[1]}"
+  if ls $folder/${configuration}.${world}.* 1> /dev/null 2>&1
+  then
+    #simulation results found
+    echo "${world} found"
+  else
+    #runs the simulation
+    sim_count=$((sim_count + 1))
+    active_workers=$(jobs -p | wc -l)
+    while (( active_workers>=worker_count))
+    do
+        sleep 1
+        active_workers=$(jobs -p | wc -l)
+    done
+      echo "launching $CELLWORLD_PLANNER_BIN/random_world_sim -wc ${configuration} -o $world ${@:2} -out $folder"
+      (
+      $CELLWORLD_PLANNER_BIN/random_world_sim -wc ${configuration} -o $world ${@:2} -out $folder
+      ) &
+  fi
 done
+
+while ((active_workers>0))
+do
+    sleep 1
+    active_workers=$(jobs -p | wc -l)
+    jobs
+done
+
+echo $jobs

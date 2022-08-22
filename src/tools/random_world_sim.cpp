@@ -24,6 +24,8 @@ using namespace gauges;
 
 Timer ts;
 
+bool verbose = false;
+
 struct Simulation_data : Static_data {
     Simulation_data(World world) : Static_data(world){
         valid = new atomic<bool>;
@@ -43,7 +45,7 @@ struct Simulation_data : Static_data {
 void run_planning_episode( const Static_data &data,
                      Simulation_episode &episode,
                      unsigned int seed,
-                     Gauge &pb) {
+                     Gauge *pb) {
     PERF_SCOPE("run_planning_episode");
     Chance::seed(seed);
     Model model(data.cells, data.simulation_parameters.tree_search_parameters.depth);
@@ -53,9 +55,10 @@ void run_planning_episode( const Static_data &data,
     model.add_agent(predator);
     model.start_episode();
     while (model.update() && model.update()) {
-        pb.set_status(" step " + to_string(prey.public_state().iteration) + " of " + to_string(data.simulation_parameters.tree_search_parameters.depth));
-        pb.tick();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        if (verbose) {
+            pb->set_status(" step " + to_string(prey.public_state().iteration) + " of " + to_string(data.simulation_parameters.tree_search_parameters.depth));
+            pb->tick();
+        }
     }
     int result = 0;
     if (prey.public_state().cell==data.goal_cell()){
@@ -68,25 +71,64 @@ void run_planning_episode( const Static_data &data,
             result = 3;
         }
     }
-    pb.set_status(" saving results...");
+    if (verbose) pb->set_status(" saving results...");
     model.end_episode();
     for (auto &dp:prey.mcts.history){
         auto &step = episode.emplace_back();
         step.prey_state = dp.prey_state;
         step.predator_state = dp.predator_state;
     }
-    switch (result){
-        case 1:
-            pb.set_status(" survived");
-            break;
-        case 2:
-            pb.set_status(" timed out");
-            break;
-        case 3:
-            pb.set_status(" died");
-            break;
+    if (verbose) {
+        switch (result) {
+            case 1:
+                pb->set_status(" survived");
+                break;
+            case 2:
+                pb->set_status(" timed out");
+                break;
+            case 3:
+                pb->set_status(" died");
+                break;
+        }
+        pb->complete();
     }
-    pb.complete();
+}
+
+Simulation run_planning_simulation_st ( const Simulation_data &lppo_data, int seed_start, int seed_end, bool use_lppos = true ) {
+    PERF_SCOPE("run_planning_simulation");
+    Static_data data = (Static_data)lppo_data;
+    if (!use_lppos){
+        data.lppos = data.free_cells;
+        data.options = data.graph;
+    }
+    Simulation simulation;
+    simulation.world_info = data.world_info;
+    simulation.parameters = data.simulation_parameters;
+    simulation.episodes.reserve(seed_end-seed_start);
+    Gauges *progress;
+    Gauge *gauge;
+    if (verbose) {
+        progress = new Gauges(seed_end - seed_start);
+        progress->auto_refresh_start(250);
+        gauge = new Gauge();
+        gauge->set_total_work(data.simulation_parameters.tree_search_parameters.depth);
+    }
+    for (unsigned int s = seed_start;s < seed_end;s++) {
+        Gauge *bar = nullptr;
+        if (verbose) {
+            auto title = "Episode " + to_string(s) + ": ";
+            bar = &progress->add_gauge(*gauge);
+            bar->set_title(title);
+        }
+        auto &episode = simulation.episodes.emplace_back();
+        run_planning_episode((Static_data &) data, episode, s, bar);
+    }
+    if (verbose) {
+        progress->auto_refresh_stop();
+        free(progress);
+        free(gauge);
+    }
+    return simulation;
 }
 
 Simulation run_planning_simulation ( const Simulation_data &lppo_data, int seed_start, int seed_end, bool use_lppos = true ) {
@@ -102,21 +144,32 @@ Simulation run_planning_simulation ( const Simulation_data &lppo_data, int seed_
     simulation.episodes.reserve(seed_end-seed_start);
     Thread_pool tp;
     mutex mtx;
-    Gauges progress(seed_end - seed_start);
-    progress.auto_refresh_start(250);
-    Gauge gauge;
-    gauge.set_total_work(data.simulation_parameters.tree_search_parameters.depth);
+    Gauges *progress;
+    Gauge *gauge;
+    if (verbose) {
+        progress = new Gauges(seed_end - seed_start);
+        progress->auto_refresh_start(250);
+        gauge = new Gauge();
+        gauge->set_total_work(data.simulation_parameters.tree_search_parameters.depth);
+    }
     for (unsigned int s = seed_start;s < seed_end;s++) {
-        auto title = "Episode " + to_string(s) + ": ";
-        auto &bar = progress.add_gauge(gauge);
-        bar.set_title(title);
+        Gauge *bar = nullptr;
+        if (verbose) {
+            auto title = "Episode " + to_string(s) + ": ";
+            bar = &progress->add_gauge(*gauge);
+            bar->set_title(title);
+        }
         auto &episode = simulation.episodes.emplace_back();
         tp.run([ &progress, &data, &bar](Simulation_episode &episode, unsigned int s) {
             run_planning_episode((Static_data &) data, episode, s, bar);
         }, ref(episode), s);
     }
     tp.wait_all();
-    progress.auto_refresh_stop();
+    if (verbose) {
+        progress->auto_refresh_stop();
+        free(progress);
+        free(gauge);
+    }
     return simulation;
 }
 
@@ -175,7 +228,7 @@ Simulation_data new_valid_simulation_data(const string &configuration, const str
 
     if (occlusions.empty()) {
         int occlusion_count = Chance::dice(world.size() / 2);
-        cout << ts.to_seconds() << ": looking for a valid world with " << occlusion_count << " occlusions" << endl;
+        if (verbose) cout << ts.to_seconds() << ": looking for a valid world with " << occlusion_count << " occlusions" << endl;
         for (int wid = 0; wid < tp.workers.size(); wid++) {
             int seed = time(0);
             tp.run(create_random_world, ref(data), seed, occlusion_count);
@@ -185,14 +238,14 @@ Simulation_data new_valid_simulation_data(const string &configuration, const str
         data.world_info.occlusions = "random_world_" + to_string(data.creation_seed);
         data.cells = data.world.create_cell_group();
         data.free_cells = data.cells.free_cells();
-        cout << ts.to_seconds() << ": creating paths " << endl;
+        if (verbose) cout << ts.to_seconds() << ": creating paths " << endl;
         data.graph = data.world.create_graph();
         tp.run([&data](){data.paths = Paths::get_astar(data.graph);});
         tp.run([&data](){data.visibility = Coordinates_visibility::create_graph(data.cells, data.world.cell_shape, data.world.cell_transformation);});
         if (random_spawn_locations == 0) random_spawn_locations = 10;
     } else {
         data.world_info.occlusions = occlusions;
-        cout << ts.to_seconds() << ": loading occlusions from " << configuration << "_" << occlusions << endl;
+        if (verbose) cout << ts.to_seconds() << ": loading occlusions from " << configuration << "_" << occlusions << endl;
         auto occlusion_builder = Resources::from("cell_group").key(configuration).key(occlusions).key("occlusions").get_resource<Cell_group_builder>();
         data.world.set_occlusions(occlusion_builder);
         data.cells = data.world.create_cell_group();
@@ -228,9 +281,9 @@ Simulation_data new_valid_simulation_data(const string &configuration, const str
             }
         }
     }
-    cout << ts.to_seconds() << ": creating options " << endl;
+    if (verbose) cout << ts.to_seconds() << ": creating options " << endl;
     data.options = Options::get_options(data.paths,data.lppos);
-    cout << ts.to_seconds() << ": Done! " << endl;
+    if (verbose) cout << ts.to_seconds() << ": Done! " << endl;
     return data;
 }
 
@@ -253,12 +306,15 @@ Simulation run_fixed_trajectory_simulation(Simulation &planning_simulation, Simu
             }
         }
     }
-    Gauge progress;
+    Gauge *progress;
     Simulation fixed_trajectory_simulation;
     fixed_trajectory_simulation.world_info = data.world_info;
     fixed_trajectory_simulation.parameters = data.simulation_parameters;
-    progress.set_title("Fixed trajectory");
-    progress.set_total_work( seed_end - seed_start);
+    if (verbose) {
+        progress = new Gauge();
+        progress->set_title("Fixed trajectory");
+        progress->set_total_work(seed_end - seed_start);
+    }
     Model model(data.cells, data.simulation_parameters.tree_search_parameters.depth);
     Predator predator(data);
     Dummy prey(data);
@@ -268,7 +324,9 @@ Simulation run_fixed_trajectory_simulation(Simulation &planning_simulation, Simu
     Cell_capture capture(data.simulation_parameters.capture_parameters, data.visibility);
     for (int seed = seed_start; seed < seed_end; seed++){
         auto &episode = fixed_trajectory_simulation.episodes.emplace_back();
-        progress.tick();
+        if (verbose) {
+            progress->tick();
+        }
         Chance::seed(seed);
         auto &trajectory = pick_random(successful_trajectories);
         model.start_episode();
@@ -308,13 +366,18 @@ Simulation run_fixed_trajectory_simulation(Simulation &planning_simulation, Simu
             }
         }
         model.end_episode();
-        progress.set_status(" survived: " + to_string(survived) +
+        if (verbose) {
+            progress->set_status(" survived: " + to_string(survived) +
                                 " died: " + to_string(died) +
                                 " timed_out: " + to_string(timed_out));
-        cout << progress;
+            cout << progress;
+        }
     }
-    progress.complete();
-    cout << endl;
+    if (verbose) {
+        progress->complete();
+        cout << endl;
+        free(progress);
+    }
     return fixed_trajectory_simulation;
 }
 
@@ -322,9 +385,12 @@ Simulation run_shortest_path_simulation(Simulation_data &data, int seed_start, i
     //collect successful trajectories
     PERF_SCOPE("run_shortest_path_simulation");
     int survived=0, died=0, timed_out=0;
-    Gauge progress;
-    progress.set_title("Shortest path");
-    progress.set_total_work( seed_end - seed_start);
+    Gauge *progress;
+    if (verbose){
+        progress = new Gauge();
+        progress->set_title("Shortest path");
+        progress->set_total_work( seed_end - seed_start);
+    }
     Simulation fixed_trajectory_simulation;
     fixed_trajectory_simulation.world_info = data.world_info;
     fixed_trajectory_simulation.parameters = data.simulation_parameters;
@@ -337,7 +403,7 @@ Simulation run_shortest_path_simulation(Simulation_data &data, int seed_start, i
     Cell_capture capture(data.simulation_parameters.capture_parameters, data.visibility);
     for (int seed = seed_start; seed < seed_end; seed++){
         auto &episode = fixed_trajectory_simulation.episodes.emplace_back();
-        progress.tick();
+        if (verbose) progress->tick();
         Chance::seed(seed);
         model.start_episode();
         prey.next_move = data.paths.get_move(prey.public_state().cell, data.goal_cell());
@@ -365,13 +431,18 @@ Simulation run_shortest_path_simulation(Simulation_data &data, int seed_start, i
             }
         }
         model.end_episode();
-        progress.set_status(" survived: " + to_string(survived) +
-                            " died: " + to_string(died) +
-                            " timed_out: " + to_string(timed_out));
-        cout << progress;
+        if (verbose) {
+            progress->set_status(" survived: " + to_string(survived) +
+                                " died: " + to_string(died) +
+                                " timed_out: " + to_string(timed_out));
+            cout << progress;
+        }
     }
-    progress.complete();
-    cout << endl;
+    if (verbose) {
+        progress->complete();
+        cout << endl;
+        free(progress);
+    }
     return fixed_trajectory_simulation;
 }
 
@@ -382,12 +453,15 @@ Simulation run_thigmotaxis_simulation (Simulation_data &data, int seed_start, in
     simulation.world_info = data.world_info;
     simulation.parameters = data.simulation_parameters;
     simulation.episodes.reserve(seed_end-seed_start);
-    Gauge progress;
-    if (reactive)
-        progress.set_title("Reactive thigmotaxis");
-    else
-        progress.set_title("Thigmotaxis");
-    progress.set_total_work( seed_end - seed_start);
+    Gauge *progress;
+    if (verbose) {
+        progress = new Gauge();
+        if (reactive)
+            progress->set_title("Reactive thigmotaxis");
+        else
+            progress->set_title("Thigmotaxis");
+        progress->set_total_work( seed_end - seed_start);
+    }
     Model model(data.cells, 1000);
     Predator predator(data);
     Thig_prey prey(data, predator);
@@ -396,7 +470,7 @@ Simulation run_thigmotaxis_simulation (Simulation_data &data, int seed_start, in
     model.add_agent(predator);
     Cell_capture capture(data.simulation_parameters.capture_parameters, data.visibility);
     for (unsigned int seed = seed_start; seed < seed_end; seed++) {
-        progress.tick();
+        if (verbose) progress->tick();
         auto &episode = simulation.episodes.emplace_back();
         Chance::seed(seed);
         model.start_episode();
@@ -423,13 +497,18 @@ Simulation run_thigmotaxis_simulation (Simulation_data &data, int seed_start, in
             }
         }
         model.end_episode();
-        progress.set_status(" survived: " + to_string(survived) +
-                            " died: " + to_string(died) +
-                            " timed_out: " + to_string(timed_out));
-        cout << progress;
+        if (verbose) {
+            progress->set_status(" survived: " + to_string(survived) +
+                                " died: " + to_string(died) +
+                                " timed_out: " + to_string(timed_out));
+            cout << progress;
+        }
     }
-    progress.complete();
-    cout << endl;
+    if (verbose) {
+        progress->complete();
+        cout << endl;
+        free(progress);
+    }
     return simulation;
 }
 
@@ -446,6 +525,8 @@ int main(int argc, char **argv) {
     auto capture_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/capture_parameters/" + p.get(Key("-c", "--capture_parameters"), "small");
     auto random_spawn_locations = stoi (p.get(Key("-s", "--random_spawn_locations"), "0"));
     auto output_folder = p.get(Key("-out", "--output_folder"), "");
+    verbose = p.contains(Key("-v", "--verbose"));
+    bool single_tread = p.contains(Key("-st", "--single_thread"));
     int start_seed = 0;
     int end_seed = episode_count;
 
@@ -482,14 +563,20 @@ int main(int argc, char **argv) {
     Simulation reactive_thigmotaxis_simulation;
 
     if (run_planning) {
-        cout << "Running Planning Simulation" << endl;
-        planning_simulation = run_planning_simulation(simulation_data, start_seed, end_seed, false);
-        cout << endl;
+        if (verbose) cout << "Running Planning Simulation" << endl;
+        if (single_tread)
+            planning_simulation = run_planning_simulation_st(simulation_data, start_seed, end_seed, false);
+        else
+            planning_simulation = run_planning_simulation(simulation_data, start_seed, end_seed, false);
+        if (verbose) cout << endl;
     }
     if (run_lppo_planning) {
-        cout << "Running LPPO Planning Simulation" << endl;
-        lppo_planning_simulation = run_planning_simulation(simulation_data, start_seed, end_seed, true);
-        cout << endl;
+        if (verbose) cout << "Running LPPO Planning Simulation" << endl;
+        if (single_tread)
+            lppo_planning_simulation = run_planning_simulation_st(simulation_data, start_seed, end_seed, true);
+        else
+            lppo_planning_simulation = run_planning_simulation(simulation_data, start_seed, end_seed, true);
+        if (verbose) cout << endl;
     }
 
     if (run_shortest_path) {
@@ -503,7 +590,7 @@ int main(int argc, char **argv) {
     if (run_reactive_thigmotaxis ) {
         reactive_thigmotaxis_simulation = run_thigmotaxis_simulation(simulation_data, start_seed, end_seed, true);
     }
-    cout << "Saving Results... " << endl;
+    if (verbose) cout << "Saving Results... " << endl;
     fs::create_directories(output_folder);
     //save world and simulation parameters first
     simulation_data.occluded_cells.get_builder().save(output_folder + "/occlusions");
@@ -564,21 +651,23 @@ int main(int argc, char **argv) {
         survival_rate_reactive_thigmotaxis = reactive_thigmotaxis_simulation_statistics.success_rate;
         reactive_thigmotaxis_simulation_statistics.save(output_folder + "/reactive_thigmotaxis_simulation_stats.json");
     }
-    cout << "Survival rates:" << endl;
-    if (run_planning) {
-        cout << " - Planning: " << survival_rate_planning << endl;
-        if (run_fixed_trajectory) {
-            cout << " - Fixed trajectory: " << survival_rate_fixed_trajectory << endl;
+    if (verbose) {
+        cout << "Survival rates:" << endl;
+        if (run_planning) {
+            cout << " - Planning: " << survival_rate_planning << endl;
+            if (run_fixed_trajectory) {
+                cout << " - Fixed trajectory: " << survival_rate_fixed_trajectory << endl;
+            }
         }
-    }
-    if (run_lppo_planning) {
-        cout << " - LPPO Planning: " << survival_rate_lppo_planning << endl;
-        if (run_fixed_lppo_trajectory) {
-            cout << " - Fixed LPPO trajectory: " << survival_rate_fixed_lppo_trajectory << endl;
+        if (run_lppo_planning) {
+            cout << " - LPPO Planning: " << survival_rate_lppo_planning << endl;
+            if (run_fixed_lppo_trajectory) {
+                cout << " - Fixed LPPO trajectory: " << survival_rate_fixed_lppo_trajectory << endl;
+            }
         }
+        if (run_shortest_path) cout << " - Shortest path: " << survival_rate_shortest_path << endl;
+        if (run_thigmotaxis) cout << " - Thigmotaxis: " << survival_rate_thigmotaxis << endl;
+        if (run_reactive_thigmotaxis) cout << " - Reactive thigmotaxis: " << survival_rate_reactive_thigmotaxis << endl;
+        cout << endl << "output folder " << output_folder << endl;
     }
-    if (run_shortest_path) cout << " - Shortest path: " << survival_rate_shortest_path << endl;
-    if (run_thigmotaxis) cout << " - Thigmotaxis: " << survival_rate_thigmotaxis << endl;
-    if (run_reactive_thigmotaxis) cout << " - Reactive thigmotaxis: " << survival_rate_reactive_thigmotaxis << endl;
-    cout << endl << "output folder " << output_folder << endl;
 }

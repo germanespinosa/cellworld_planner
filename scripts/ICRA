@@ -1,0 +1,58 @@
+#!/bin/bash
+worker_count=$(getconf _NPROCESSORS_ONLN)
+jobs=()
+sim_count=0
+
+for DEPTH in "5" "10" "15" "20" "25" "50" "100" "200" "300" "400" "500" "600" "700" "800" "900" "1000" "2000" "3000" "4000" "5000" "6000" "7000" "8000" "9000" "10000" "12000" "13000" "14000" "15000" "16000" "17000" "18000" "19000" "20000" "22500" "25000" "27500" "30000" "32500" "35000" "37500" "40000" "42500" "45000" "47500" "50000"
+do
+  simulation_folder="${CELLWORLD_PLANNER}/simulation_results/POMCP_ICRA_${DEPTH}"
+  if [ ! -d "$simulation_folder" ]
+  then
+    configuration="${stringarray[0]}"
+    world="${stringarray[1]}"
+    #runs the simulation
+    sim_count=$((sim_count + 1))
+    active_workers=$(jobs -p | wc -l)
+    while (( active_workers>=worker_count))
+    do
+        sleep .1
+        active_workers=$(jobs -p | wc -l)
+    done
+      echo "-wc hexagonal -o 21_05 -wc ${configuration} -o $world -out $simulation_folder -t $DEPTH -sc 500 -rp -p slow_10_randomnes"
+      (
+        #sleep 10
+        $CELLWORLD_PLANNER_BIN/random_world_sim -wc hexagonal -o 21_05 -wc ${configuration} -o $world -out $simulation_folder -t $DEPTH -sc 500 -rp -p slow_10_randomnes -st
+      ) &
+    fi
+done
+
+
+for DEPTH in "5" "10" "15" "20" "25" "50" "100" "200" "300" "400" "500" "600" "700" "800" "900" "1000" "2000" "3000" "4000" "5000" "6000" "7000" "8000" "9000" "10000" "12000" "13000" "14000" "15000" "16000" "17000" "18000" "19000" "20000"
+do
+  simulation_folder="${CELLWORLD_PLANNER}/simulation_results/LPPO_ICRA_${DEPTH}"
+  if [ ! -d "$simulation_folder" ]
+  then
+    configuration="${stringarray[0]}"
+    world="${stringarray[1]}"
+    #runs the simulation
+    sim_count=$((sim_count + 1))
+    active_workers=$(jobs -p | wc -l)
+    while (( active_workers>=worker_count))
+    do
+        sleep .1
+        active_workers=$(jobs -p | wc -l)
+    done
+      echo "-wc hexagonal -o 21_05 -wc ${configuration} -o $world -out $simulation_folder -t $DEPTH -sc 500 -rl -p slow_10_randomnes -v"
+      (
+        #sleep 10
+        $CELLWORLD_PLANNER_BIN/random_world_sim -wc hexagonal -o 21_05 -wc ${configuration} -o $world -out $simulation_folder -t $DEPTH -sc 500 -rl -p slow_10_randomnes -st
+      ) &
+    fi
+done
+
+while ((active_workers>0))
+do
+    sleep 1
+    active_workers=$(jobs -p | wc -l)
+    jobs
+done

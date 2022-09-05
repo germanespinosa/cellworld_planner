@@ -1,0 +1,9 @@
+#!/bin/bash
+for w1 in {100..599}
+do
+  for e in {0..9}
+  do
+        world="${w1}_0${e}"
+        echo "square_small $world"
+  done
+done

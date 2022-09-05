@@ -1,0 +1,20 @@
+#!/bin/bash
+worker_count=$PARALLEL_WORKERS
+PARALLEL_ACTIVE_WORKERS=$(cat ~/.parallel_active_processes)
+if [ "$worker_count" == "" ]
+then
+  worker_count=$(getconf _NPROCESSORS_ONLN)
+fi
+active_workers_count=$(jobs -p | wc -l)
+while (( active_workers>=worker_count))
+do
+    sleep .1
+    active_workers=$(jobs -p | wc -l)
+done
+
+jobs -p | wc -l
+jobs -p
+${@} &
+echo "$PARALLEL_ACTIVE_WORKERS $!" > ~/.parallel_active_processes
+echo "$PARALLEL_ACTIVE_WORKERS $PPID $! $$ $active_workers $worker_count"
+

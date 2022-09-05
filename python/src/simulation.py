@@ -104,7 +104,7 @@ class Prey_parameters(JsonObject):
         self.randomness = randomness
 
 class Simulation_parameters(JsonObject):
-    def __init__(self, reward: Reward = None, tree_search_parameters: Tree_search_parameters = None, predator_parameters: Predator_parameters = None, prey_parameters: Prey_parameters = None):
+    def __init__(self, reward: Reward = None, tree_search_parameters: Tree_search_parameters = None, predator_parameters: Predator_parameters = None, prey_parameters: Prey_parameters = None, steps: int = 50):
         if reward:
             self.reward = reward
         else:
@@ -124,6 +124,8 @@ class Simulation_parameters(JsonObject):
             self.prey_parameters = prey_parameters
         else:
             self.prey_parameters = Prey_parameters()
+
+        self.steps = steps
 
 
 class Prey_state_history(JsonList):

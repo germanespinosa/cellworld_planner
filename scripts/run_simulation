@@ -1,10 +1,11 @@
 #!/bin/bash
 
-folder="${CELLWORLD_PLANNER}/simulation_results/$1"
+results_folder="${CELLWORLD_PLANNER}/simulation_results/$1"
 
 worker_count=$(getconf _NPROCESSORS_ONLN)
 jobs=()
 sim_count=0
+simulation_date=$(date +"%Y%m%d_%H%M")
 while IFS= read -r line; do
   stringarray=($line)
   configuration="${stringarray[0]}"
@@ -22,9 +23,10 @@ while IFS= read -r line; do
         sleep .1
         active_workers=$(jobs -p | wc -l)
     done
-      echo "launching $CELLWORLD_PLANNER_BIN/random_world_sim -wc ${configuration} -o $world ${@:2} -out $folder"
+      echo "launching $CELLWORLD_PLANNER_BIN/random_world_sim -wc ${configuration} -o $world -out $folder ${@:2}"
       (
-      $CELLWORLD_PLANNER_BIN/random_world_sim -wc ${configuration} -o $world ${@:2} -out $folder
+      simulation_folder="${results_folder}/${configuration}_${world}_${simulation_date}"
+      $CELLWORLD_PLANNER_BIN/random_world_sim -wc ${configuration} -o $world -out $simulation_folder ${@:2}
       ) &
   fi
 done

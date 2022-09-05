@@ -1,10 +1,11 @@
 #include <chrono>
 #include <performance.h>
-
 #include <cell_world.h>
 #include <cellworld_planner/prey.h>
 #include <params_cpp.h>
 #include <cellworld_planner/simulation.h>
+#include <cellworld_planner/statistics.h>
+#include <cellworld_planner/tree_search_location.h>
 #include <thread_pool.h>
 
 using namespace thread_pool;
@@ -17,13 +18,27 @@ using namespace cell_world::planner;
 struct Agents_cells : json_cpp::Json_object {
     Json_object_members(
             Add_member(prey);
+            Add_member(prey_location);
+            Add_member(prey_orientation);
+            Add_member(predator_location);
             Add_member(predator);
+            Add_member(los);
             )
     Agents_cells() = default;
-    Agents_cells(int prey, int predator, unsigned int frame): prey(prey), predator(predator), frame(frame) {}
+    Agents_cells(int prey, int predator, unsigned int frame, Location &prey_location, float prey_orientation, Location &predator_location):
+        prey(prey),
+        predator(predator),
+        frame(frame),
+        prey_location(prey_location),
+        prey_orientation(prey_orientation),
+        predator_location(predator_location){}
     int prey{};
     int predator{};
     unsigned int frame{};
+    Location prey_location{};
+    float prey_orientation{};
+    Location predator_location{};
+    bool los{};
 };
 
 struct Simulation_step_data : json_cpp::Json_object {
@@ -35,27 +50,43 @@ struct Simulation_step_data : json_cpp::Json_object {
     unsigned int frame{};
 };
 
+struct Line_of_sight  : json_cpp::Json_object{
+    Json_object_members(
+            Add_member_with_name(visible,true,"LOS");
+    )
+    bool visible;
+};
+
 void create_trajectories ( const Static_data &data,
                            Simulation_episode& sim_episode,
                            const Episode &experiment_episode,
                            float prey_speed) {
     double time_step = 0;
-    Agents_cells agent_cells(-1, -1, 0);
-    Agents_cells first_agent_cells(-1, -1, 0);
+    Agents_cells agent_cells;
+    Agents_cells first_agent_cells;
     bool first = true;
     json_cpp::Json_vector<Agents_cells> episode_cells;
     for (auto &step : experiment_episode.trajectories) {
         int cell_id = data.cells.find(step.location);
         if (step.agent_name == "prey") {
             agent_cells.prey = cell_id;
+            agent_cells.prey_orientation = to_radians(step.rotation);
+            agent_cells.prey_location = step.location;
+            Line_of_sight s;
+            step.data >> s;
+            if (s.visible) {
+                agent_cells.los = true;
+            }
         } else {
             agent_cells.predator = cell_id;
+            agent_cells.predator_location = step.location;
         }
         if (agent_cells.predator == -1 || agent_cells.prey == -1) continue;
         if (step.time_stamp >= time_step &&
             (first || first_agent_cells.prey != agent_cells.prey || first_agent_cells.predator != agent_cells.predator)) {
             agent_cells.frame = step.frame;
             episode_cells.push_back(agent_cells);
+            agent_cells.los = false;
             time_step = step.time_stamp + prey_speed;
         }
         if (first) {
@@ -75,20 +106,20 @@ void create_trajectories ( const Static_data &data,
     model.add_agent(prey);
     model.add_agent(predator);
 
-    Tree_search ts(data, no_predator);
+    Tree_search_location ts(data, no_predator);
     Agents_cells prev = episode_cells[0];
     model.start_episode();
-    for (int step_index = 0;step_index< episode_cells.size(); step_index++){
+    for (int step_index = 0;step_index < episode_cells.size(); step_index++){
         auto &step = episode_cells[step_index];
         // move agents to match current locations
         prey.next_move = data.cells[step.prey].coordinates - data.cells[prev.prey].coordinates;
         model.update();
-        ts.get_best_move_ucb1(model.state.public_state);
+        ts.get_best_move_ucb1(model.state.public_state, step.prey_location, step.prey_orientation, step.predator_location, step.los);
         predator.next_move = data.cells[step.predator].coordinates - data.cells[prev.predator].coordinates;
         model.update();
         auto &sim_step = sim_episode.emplace_back();
         sim_step.prey_state = ts.history.back().prey_state;
-        ts.record(model.state.public_state);
+        ts.record(model.state.public_state, step.prey_location, step.prey_orientation, step.predator_location, step.los);
         sim_step.predator_state.cell_id = step.predator;
         sim_step.data = Simulation_step_data(step.frame).to_json();
         prev = step;
@@ -136,15 +167,10 @@ int main(int argc, char **argv) {
         auto &episode = experiment.episodes[e];
         cout << "Processing trajectories " << e << endl;
         auto &sim_episode = simulation.episodes[e];
-
-        //        create_trajectories( data, sim_episode, episode, prey_speed);
-
-        tp.run(create_trajectories,
-            std::ref(data),
-            std::ref(sim_episode),
-            std::ref(episode),
-            prey_speed );
+        create_trajectories (data, sim_episode, episode, prey_speed);
     }
     tp.wait_all();
-    simulation.save(simulation_file);
+    simulation.save(simulation_file+".json");
+    Simulation_statistics stats(simulation, data);
+    stats.save(simulation_file + "_stats.json");
 }

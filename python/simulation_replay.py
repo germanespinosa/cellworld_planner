@@ -16,7 +16,6 @@ class Simulation_replay(QMainWindow):
         self.simulation_statistics = None
         self.occlusions = None
         self.tick_paused = False
-        self.init_menu()
         self.statusBar()
         self.setGeometry(0, 0, 1100, 600)
         self.setWindowTitle("Simulation replay")
@@ -56,6 +55,7 @@ class Simulation_replay(QMainWindow):
         self.current_frame = 0
         if (simulation):
             self.load_simulation(simulation, simulation_statistics, folder)
+        self.init_menu()
         self.show()
 
     def episode_selected(self, i: QListWidgetItem):
@@ -130,7 +130,10 @@ class Simulation_replay(QMainWindow):
         self.episode_replay.save_video(video_file, codec, fps)
 
     def show_prey_plan(self):
-        self.episode_replay.view_prey_plan = self.view_successful.isChecked()
+        self.episode_replay.view_prey_plan = self.view_prey_plan.isChecked()
+
+    def show_predator_destination(self):
+        self.episode_replay.view_predator_destination = self.view_predator_destination.isChecked()
 
     def init_menu(self):
         exitAct = QAction('&Exit', self)
@@ -178,7 +181,7 @@ class Simulation_replay(QMainWindow):
         self.view_prey_plan = QAction('Show prey plan', self, checkable=True)
         self.view_prey_plan.setChecked(False)
         self.view_prey_plan.setStatusTip('Show prey plan')
-        self.view_successful.triggered.connect(self.show_prey_plan)
+        self.view_prey_plan.triggered.connect(self.show_prey_plan)
 
         self.view_predator = QAction('Show predator', self, checkable=True)
         self.view_predator.setChecked(True)
@@ -187,6 +190,7 @@ class Simulation_replay(QMainWindow):
         self.view_predator_destination = QAction('Show predator destination', self, checkable=True)
         self.view_predator_destination.setChecked(False)
         self.view_predator_destination.setStatusTip('Show predator destination')
+        self.view_predator_destination.triggered.connect(self.show_predator_destination)
 
         self.view_belief = QAction('View belief state', self, checkable=True)
         self.view_belief.setChecked(True)
@@ -202,6 +206,17 @@ class Simulation_replay(QMainWindow):
         viewMenu.addAction(self.view_prey_plan)
         viewMenu.addAction(self.view_predator_destination)
         viewMenu.addAction(self.view_belief)
+
+
+        self.speed_up = QAction('Speed up', self)
+        self.speed_up.triggered.connect(self.episode_replay.tick_speed_up)
+        self.speed_down = QAction('Speed down', self)
+        self.speed_down.triggered.connect(self.episode_replay.tick_speed_down)
+
+        replayMenu = menubar.addMenu('&Replay')
+        replayMenu.addAction(self.speed_up)
+        replayMenu.addAction(self.speed_down)
+
 
 def main():
     app = QApplication(sys.argv)

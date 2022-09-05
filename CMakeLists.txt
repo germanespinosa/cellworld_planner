@@ -39,7 +39,9 @@ set( cellworld_planner_files
         src/thig_prey.cpp
         src/lppo.cpp
         src/statistics.cpp
-        src/world_creation.cpp)
+        src/world_creation.cpp
+        src/belief_state_location.cpp
+        src/tree_search_location.cpp)
 
 add_library(cellworld_planner ${cellworld_planner_files})
 
@@ -197,6 +199,14 @@ target_link_libraries( test_progress
 
 add_executable(create_occlusions src/tools/create_occlusions.cpp)
 target_link_libraries( create_occlusions
+        LINK_PUBLIC
+        cellworld_planner
+        cellworld
+        params-cpp)
+
+add_executable(show_data src/tools/show_data.cpp)
+
+target_link_libraries( show_data
         LINK_PUBLIC
         cellworld_planner
         cellworld

@@ -34,12 +34,6 @@ struct Simulation_data : Static_data {
     }
     int creation_seed = -1;
     atomic<bool> *valid{};
-    ~Simulation_data() {
-//        if (valid) {
-//            free(valid);
-//            valid = nullptr;
-//        }
-    }
 };
 
 void run_planning_episode( const Static_data &data,
@@ -48,7 +42,7 @@ void run_planning_episode( const Static_data &data,
                      Gauge *pb) {
     PERF_SCOPE("run_planning_episode");
     Chance::seed(seed);
-    Model model(data.cells, data.simulation_parameters.tree_search_parameters.depth);
+    Model model(data.cells, data.simulation_parameters.steps);
     Predator predator(data);
     Prey prey(data, predator);
     model.add_agent(prey);
@@ -56,7 +50,7 @@ void run_planning_episode( const Static_data &data,
     model.start_episode();
     while (model.update() && model.update()) {
         if (verbose) {
-            pb->set_status(" step " + to_string(prey.public_state().iteration) + " of " + to_string(data.simulation_parameters.tree_search_parameters.depth));
+            pb->set_status(" step " + to_string(prey.public_state().iteration) + " of " + to_string(data.simulation_parameters.steps));
             pb->tick();
         }
     }
@@ -64,7 +58,7 @@ void run_planning_episode( const Static_data &data,
     if (prey.public_state().cell==data.goal_cell()){
         result = 1;
     } else {
-        if (prey.public_state().iteration == data.simulation_parameters.tree_search_parameters.depth ){
+        if (prey.public_state().iteration == data.simulation_parameters.steps ){
             result = 2;
         } else
         {
@@ -111,7 +105,7 @@ Simulation run_planning_simulation_st ( const Simulation_data &lppo_data, int se
         progress = new Gauges(seed_end - seed_start);
         progress->auto_refresh_start(250);
         gauge = new Gauge();
-        gauge->set_total_work(data.simulation_parameters.tree_search_parameters.depth);
+        gauge->set_total_work(data.simulation_parameters.steps);
     }
     for (unsigned int s = seed_start;s < seed_end;s++) {
         Gauge *bar = nullptr;
@@ -150,7 +144,7 @@ Simulation run_planning_simulation ( const Simulation_data &lppo_data, int seed_
         progress = new Gauges(seed_end - seed_start);
         progress->auto_refresh_start(250);
         gauge = new Gauge();
-        gauge->set_total_work(data.simulation_parameters.tree_search_parameters.depth);
+        gauge->set_total_work(data.simulation_parameters.steps);
     }
     for (unsigned int s = seed_start;s < seed_end;s++) {
         Gauge *bar = nullptr;
@@ -315,7 +309,7 @@ Simulation run_fixed_trajectory_simulation(Simulation &planning_simulation, Simu
         progress->set_title("Fixed trajectory");
         progress->set_total_work(seed_end - seed_start);
     }
-    Model model(data.cells, data.simulation_parameters.tree_search_parameters.depth);
+    Model model(data.cells, data.simulation_parameters.steps);
     Predator predator(data);
     Dummy prey(data);
     prey.start_cell_id = data.start_cell().id;
@@ -358,7 +352,7 @@ Simulation run_fixed_trajectory_simulation(Simulation &planning_simulation, Simu
         if (prey.public_state().cell==data.goal_cell()){
             survived ++;
         } else {
-            if (prey.public_state().iteration == data.simulation_parameters.tree_search_parameters.depth ){
+            if (prey.public_state().iteration == data.simulation_parameters.steps ){
                 timed_out++;
             } else
             {
@@ -394,7 +388,7 @@ Simulation run_shortest_path_simulation(Simulation_data &data, int seed_start, i
     Simulation fixed_trajectory_simulation;
     fixed_trajectory_simulation.world_info = data.world_info;
     fixed_trajectory_simulation.parameters = data.simulation_parameters;
-    Model model(data.cells, data.simulation_parameters.tree_search_parameters.depth);
+    Model model(data.cells, data.simulation_parameters.steps);
     Predator predator(data);
     Dummy prey(data);
     prey.start_cell_id = data.start_cell().id;
@@ -423,7 +417,7 @@ Simulation run_shortest_path_simulation(Simulation_data &data, int seed_start, i
         if (prey.public_state().cell==data.goal_cell()){
             survived ++;
         } else {
-            if (prey.public_state().iteration == data.simulation_parameters.tree_search_parameters.depth ){
+            if (prey.public_state().iteration == data.simulation_parameters.steps ){
                 timed_out++;
             } else
             {
@@ -489,7 +483,7 @@ Simulation run_thigmotaxis_simulation (Simulation_data &data, int seed_start, in
         if (prey.public_state().cell==data.goal_cell()){
             survived ++;
         } else {
-            if (prey.public_state().iteration == data.simulation_parameters.tree_search_parameters.depth ){
+            if (prey.public_state().iteration == data.simulation_parameters.steps ){
                 timed_out++;
             } else
             {
@@ -519,6 +513,7 @@ int main(int argc, char **argv) {
     auto occlusions = p.get(Key("-o", "--occlusions"), "");
     auto reward = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/reward/" + p.get(Key("-r", "--reward"), "reward1");
     auto episode_count = stoi(p.get(Key("-e", "--episode_count"), "100"));
+    auto steps = stoi (p.get(Key("-sc", "--step_count"), "50"));
     auto tree_search_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/tree_search_parameters/" + p.get(Key("-t", "--tree_search_parameters"), "1000");
     auto predator_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/predator_parameters/" + p.get(Key("-p", "--predator_parameters"), "fast_25_randomness");
     auto prey_parameters = get_variable("CELLWORLD_PLANNER_CONFIG","../config") + "/prey_parameters/" + p.get(Key("-y", "--prey_parameters"), "default");
@@ -539,20 +534,15 @@ int main(int argc, char **argv) {
     bool run_reactive_thigmotaxis = p.contains(Key("-rr")) || p.contains(Key("-ra"));
 
     if ( output_folder == "" ){
-        output_folder = get_variable("CELLWORLD_PLANNER_RESULTS","../simulation_results") + "/random_world";
+        output_folder = get_variable("CELLWORLD_PLANNER_RESULTS","../simulation_results") + "/random_world/" + configuration + "." + json_cpp::Json_date::now().to_string("%Y%m%d_%H%M");
     }
-    if (occlusions.empty()) {
-        output_folder += "/" + configuration + "." + json_cpp::Json_date::now().to_string("%Y%m%d_%H%M");
-    } else {
-        output_folder += "/" + configuration + "." + occlusions + "." + json_cpp::Json_date::now().to_string("%Y%m%d_%H%M");
-    }
-
     auto simulation_data = new_valid_simulation_data(configuration, occlusions, random_spawn_locations);
     simulation_data.simulation_parameters.reward.load(reward);
     simulation_data.simulation_parameters.tree_search_parameters.load(tree_search_parameters);
     simulation_data.simulation_parameters.predator_parameters.load(predator_parameters);
     simulation_data.simulation_parameters.prey_parameters.load(prey_parameters);
     simulation_data.simulation_parameters.capture_parameters.load(capture_parameters);
+    simulation_data.simulation_parameters.steps = steps;
 
     Simulation planning_simulation;
     Simulation fixed_trajectory_simulation;

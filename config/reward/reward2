@@ -1,1 +1,1 @@
-{"step_cost":0.1,"gamma":0.99,"capture_cost":100.0,"episode_reward":10.0, "incompleteness":0.0}
+{"step_cost":0.1,"gamma":0.99,"capture_cost":10.0,"episode_reward":10.0, "incompleteness":-10.0}

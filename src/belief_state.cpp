@@ -21,7 +21,7 @@ planner::Belief_state::Belief_state(const Static_data &data):
     data(data),
     prey(data),
     predator(data),
-    model(data.cells, 1000){
+    model(data.cells, data.simulation_parameters.steps){
     model.add_agent(prey);
     model.add_agent(predator);
 }

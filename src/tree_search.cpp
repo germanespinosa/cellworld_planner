@@ -24,7 +24,7 @@ planner::Tree_search::Tree_search(const planner::Static_data &data, Predator &pr
         data(data),
         predator(predator),
         belief_state(data),
-        model(data.cells, data.simulation_parameters.tree_search_parameters.depth),
+        model(data.cells, data.simulation_parameters.steps),
         sim_predator(data),
         sim_prey(data),
         capture(data.simulation_parameters.capture_parameters, data.visibility){
@@ -58,7 +58,6 @@ Move planner::Tree_search::get_best_move_ucb1(const Model_public_state &state) {
     }
     Option root(prey_current_cell,data.options);
     root.load();
-    unsigned int option_cell_id;
     if (belief_state.particles.empty()) {
         return data.paths.get_move(prey_current_cell,data.goal_cell());
     }

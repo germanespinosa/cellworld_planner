@@ -21,7 +21,7 @@ do
       echo "-wc hexagonal -o 21_05 -wc ${configuration} -o $world -out $simulation_folder -t $DEPTH -sc 500 -rp -p slow_10_randomnes"
       (
         #sleep 10
-        $CELLWORLD_PLANNER_BIN/random_world_sim -wc hexagonal -o 21_05 -wc ${configuration} -o $world -out $simulation_folder -t $DEPTH -sc 500 -rp -p slow_10_randomnes -st
+        $CELLWORLD_PLANNER_BIN/random_world_sim -wc hexagonal -o 21_05 -wc ${configuration} -o $world -out $simulation_folder -t $DEPTH -sc 100 -rp -p slow_10_randomnes -st -v
       ) &
     fi
 done
@@ -45,7 +45,7 @@ do
       echo "-wc hexagonal -o 21_05 -wc ${configuration} -o $world -out $simulation_folder -t $DEPTH -sc 500 -rl -p slow_10_randomnes -v"
       (
         #sleep 10
-        $CELLWORLD_PLANNER_BIN/random_world_sim -wc hexagonal -o 21_05 -wc ${configuration} -o $world -out $simulation_folder -t $DEPTH -sc 500 -rl -p slow_10_randomnes -st
+        $CELLWORLD_PLANNER_BIN/random_world_sim -wc hexagonal -o 21_05 -wc ${configuration} -o $world -out $simulation_folder -t $DEPTH -sc 100 -rl -p slow_10_randomnes -st
       ) &
     fi
 done
@@ -54,5 +54,5 @@ while ((active_workers>0))
 do
     sleep 1
     active_workers=$(jobs -p | wc -l)
-    jobs
+    jobs > /dev/null
 done

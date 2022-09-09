@@ -23,6 +23,7 @@ include_directories(${dependencies_folder}/gauges/include)
 install_dependency(https://github.com/germanespinosa/perf-analysis PerfAnalysis)
 include_directories(${dependencies_folder}/perf-analysis/include)
 
+install_dependency(https://github.com/germanespinosa/robot_library Robot_lib)
 
 string(APPEND CMAKE_CXX_FLAGS " -fno-strict-aliasing -pthread ")
 
@@ -212,6 +213,16 @@ target_link_libraries( show_data
         cellworld
         params-cpp)
 
+
+add_executable(continuous_space_simulation src/tools/continuous_space_simulation.cpp)
+
+target_link_libraries( continuous_space_simulation
+        LINK_PUBLIC
+        cellworld_planner
+        cellworld
+        params-cpp
+        controller
+        robot_lib)
 
 #tests
 

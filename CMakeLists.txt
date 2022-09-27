@@ -8,22 +8,33 @@ project(cellworld_planner
         DESCRIPTION "add basic planning capabilities to agents"
         LANGUAGES CXX)
 
-find_package(Dependencies)
+####
+#### DEPENDENCIES
+####
 
-install_dependency(https://github.com/germanespinosa/thread_pool)
-include_directories(${dependencies_folder}/thread_pool/include)
+#if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/DependenciesConfig.cmake)
+#    file(DOWNLOAD https://raw.githubusercontent.com/germanespinosa/dependencies/main/DependenciesConfig.cmake ${CMAKE_CURRENT_SOURCE_DIR}/DependenciesConfig.cmake)
+#endif()
+#set(Dependencies_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+find_package (Dependencies REQUIRED)
 
-install_dependency(https://github.com/germanespinosa/cellworld Cellworld)
-install_dependency(https://github.com/germanespinosa/params-cpp Params-cpp)
-include_directories(${dependencies_folder}/params-cpp/include)
+####
+####
+####
 
-install_dependency(https://github.com/germanespinosa/gauges)
-include_directories(${dependencies_folder}/gauges/include)
+install_git_dependency(https://github.com/germanespinosa/json-cpp CMAKE_PROJECT PACKAGES Json-cpp)
 
-install_dependency(https://github.com/germanespinosa/perf-analysis PerfAnalysis)
-include_directories(${dependencies_folder}/perf-analysis/include)
+install_git_dependency(https://github.com/germanespinosa/thread_pool INCLUDE_DIRECTORIES include)
 
-install_dependency(https://github.com/germanespinosa/robot_library Robot_lib)
+install_git_dependency(https://github.com/germanespinosa/cellworld CMAKE_PROJECT PACKAGES Cellworld)
+
+install_git_dependency(https://github.com/germanespinosa/requests CMAKE_PROJECT PACKAGES Requests)
+
+install_git_dependency(https://github.com/germanespinosa/params-cpp CMAKE_PROJECT INCLUDE_DIRECTORIES include)
+
+install_git_dependency(https://github.com/germanespinosa/gauges INCLUDE_DIRECTORIES include)
+
+install_git_dependency(https://github.com/germanespinosa/perf-analysis CMAKE_PROJECT INCLUDE_DIRECTORIES include)
 
 string(APPEND CMAKE_CXX_FLAGS " -fno-strict-aliasing -pthread ")
 
@@ -214,18 +225,18 @@ target_link_libraries( show_data
         params-cpp)
 
 
-add_executable(continuous_space_simulation src/tools/continuous_space_simulation.cpp)
-
-target_link_libraries( continuous_space_simulation
-        LINK_PUBLIC
-        cellworld_planner
-        cellworld
-        params-cpp
-        controller
-        robot_lib)
+#add_executable(continuous_space_simulation src/tools/continuous_space_simulation.cpp)
+#
+#target_link_libraries( continuous_space_simulation
+#        LINK_PUBLIC
+#        cellworld_planner
+#        cellworld
+#        params-cpp
+#        controller
+#        robot_lib)
 
 #tests
 
-install_dependency(https://github.com/germanespinosa/catch CatchTests)
-
-test_library(cellworld)
+#install_dependency(https://github.com/germanespinosa/catch CatchTests)
+#
+#test_library(cellworld)

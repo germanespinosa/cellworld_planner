@@ -25,6 +25,8 @@ using namespace gauges;
 Timer ts;
 
 bool verbose = false;
+float average_planning_time = 0;
+float planning_iterations = 0;
 
 struct Simulation_data : Static_data {
     Simulation_data(World world) : Static_data(world){
@@ -48,7 +50,12 @@ void run_planning_episode( const Static_data &data,
     model.add_agent(prey);
     model.add_agent(predator);
     model.start_episode();
+    Timer t;
     while (model.update() && model.update()) {
+        float planning_iteration_time=t.to_seconds()*1000;
+        t.reset();
+        average_planning_time = (average_planning_time * planning_iterations + planning_iteration_time) / (planning_iterations + 1.0);
+        planning_iterations  += 1;
         if (verbose) {
             pb->set_status(" step " + to_string(prey.public_state().iteration) + " of " + to_string(data.simulation_parameters.steps));
             pb->tick();
@@ -103,7 +110,7 @@ Simulation run_planning_simulation_st ( const Simulation_data &lppo_data, int se
     Gauge *gauge;
     if (verbose) {
         progress = new Gauges(seed_end - seed_start);
-        progress->auto_refresh_start(250);
+        progress->auto_refresh_start(10000);
         gauge = new Gauge();
         gauge->set_total_work(data.simulation_parameters.steps);
     }
@@ -660,4 +667,5 @@ int main(int argc, char **argv) {
         if (run_reactive_thigmotaxis) cout << " - Reactive thigmotaxis: " << survival_rate_reactive_thigmotaxis << endl;
         cout << endl << "output folder " << output_folder << endl;
     }
+    cout << "branches sampled: " << simulation_data.simulation_parameters.tree_search_parameters.simulations << ", " << average_planning_time << endl;
 }

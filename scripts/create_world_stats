@@ -6,7 +6,7 @@ mkdir -p $WORLD_STATS_FOLDER
 for WORLD_NUMBER in 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39; do
   for ENTROPY_BUCKET in 00 01 02 03 04 05 06 07 08 09; do
     WORLD="${WORLD_NUMBER}_${ENTROPY_BUCKET}"
-    $CELLWORLD_PLANNER_BIN/create_world_statistics -c square_small -i canonical -o $WORLD -s $WORLD_STATS_FOLDER/square_small.$WORLD
+    $CELLWORLD_PLANNER_BIN/create_world_statistics -c square_small -i canonical -o $WORLD -s $CELLWORLD_CACHE/world_statistics/square_small.$WORLD
     $CELLWORLD_PLANNER_BIN/show_stats -o $WORLD -c square_small
   done
 done

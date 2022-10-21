@@ -2,9 +2,18 @@
 
 using namespace cell_world;
 
-planner::Static_data::Static_data(const World_info &world_info):
-    world_info(world_info),
-    world(World::get_from_world_info(world_info)),
+planner::Static_data::Static_data(const World_info &pworld_info):
+    Static_data(World::get_from_world_info(pworld_info))
+    {
+        world_info = pworld_info;
+    }
+
+const Cell &planner::Static_data::start_cell() const {
+    return world.cells[start_cell_id];
+}
+
+planner::Static_data::Static_data(World world):
+    world(std::move(world)),
     cells(world.create_cell_group()),
     free_cells(cells.free_cells()),
     occluded_cells(cells.occluded_cells()),
@@ -19,18 +28,8 @@ planner::Static_data::Static_data(const World_info &world_info):
     predator_start_locations(world.create_cell_group(Resources::from("cell_group").key(world_info.world_configuration).key(world_info.occlusions).key("spawn_locations").get_resource<Cell_group_builder>())),
     world_statistics(World_statistics::get_from_parameters_name(world_info.world_configuration, world_info.occlusions)),
     start_cell_id(0),
-    goal_cell_id(world.size()-1)
-{
-}
-
-const Cell &planner::Static_data::start_cell() const {
-    return world.cells[start_cell_id];
-}
-
-planner::Static_data::Static_data(World world):
-    world(std::move(world)),
-    start_cell_id(0),
-    goal_cell_id(world.size()-1)
+    goal_cell_id(world.size()-1),
+    predator_moves(world.connection_pattern)
 {
 
 }

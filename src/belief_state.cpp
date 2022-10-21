@@ -59,6 +59,7 @@ void planner::Belief_state::record_state(const Model_public_state &state) {
                 model.update();
             }
             vector<Model_state> new_particles;
+            new_particles.reserve(particles.size());
             for (auto &particle: particles) {
                 model.set_state(particle);
                 prey.next_move = last_move;

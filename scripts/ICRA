@@ -2,9 +2,9 @@
 worker_count=$(getconf _NPROCESSORS_ONLN)
 sim_count=0
 
-for DEPTH in "5" "10" "15" "20" "25" "50" "100" "200" "300" "400" "500" "600" "700" "800" "900" "1000" "2000" "3000" "4000" "5000" "6000" "7000" "8000" "9000" "10000" "12000" "13000" "14000" "15000" "16000" "17000" "18000" "19000" "20000" "22500" "25000" "27500" "30000" "32500" "35000" "37500" "40000" "42500" "45000" "47500" "50000"
+for DEPTH in "5" "10" "15" "20" "25" "50" "100" "200" "300" "400" "500" "600" "700" "800" "900" "1000" "2000" "3000"
 do
-  POMCP_simulation_folder="${CELLWORLD_PLANNER}/simulation_results/POMCP_ICRA_${DEPTH}"
+  POMCP_simulation_folder="${CELLWORLD_PLANNER}/simulation_results/POMCP_ICRA_08_${DEPTH}"
   if [ ! -d "$POMCP_simulation_folder" ]
   then
     configuration="${stringarray[0]}"
@@ -17,13 +17,13 @@ do
         sleep .1
         active_workers=$(jobs -p | wc -l)
     done
-      params=$(echo "-wc hexagonal -o 21_05 -wc ${configuration} -o $world -out $POMCP_simulation_folder -t $DEPTH -sc 150 -rp -p slow_10_randomnes -st -r reward2")
-      echo "launching $params"
+      params=$(echo "-wc hexagonal -o 21_05 -wc ${configuration} -e 2 -o $world -out $POMCP_simulation_folder -t $DEPTH -sc 150 -rl -p slow_10_randomness -st -r reward2")
+      #echo "launching $params"
       (
         $CELLWORLD_PLANNER_BIN/random_world_sim $params
       ) &
     fi
-  LPPO_simulation_folder="${CELLWORLD_PLANNER}/simulation_results/LPPO_ICRA_${DEPTH}"
+  LPPO_simulation_folder="${CELLWORLD_PLANNER}/simulation_results/POMCP_ICRA_08_${DEPTH}"
   if [ ! -d "$LPPO_simulation_folder" ]
   then
     configuration="${stringarray[0]}"
@@ -36,8 +36,8 @@ do
         sleep .1
         active_workers=$(jobs -p | wc -l)
     done
-      params=$(echo "-wc hexagonal -o 21_05 -wc ${configuration} -o $world -out $LPPO_simulation_folder -t $DEPTH -sc 150 -rl -p slow_10_randomnes -st -r reward2")
-      echo "launching $params"
+      params=$(echo "-wc hexagonal -o 21_05 -wc ${configuration} -e 2 -o $world -out $LPPO_simulation_folder -t $DEPTH -sc 150 -rp -p slow_10_randomness -st -r reward2")
+#      echo "launching $params"
       (
         $CELLWORLD_PLANNER_BIN/random_world_sim $params
       ) &

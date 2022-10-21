@@ -53,7 +53,6 @@ Move planner::Tree_search_location::get_best_move_ucb1(const Model_public_state 
         history_step.prey_state.belief_state[particle.public_state.agents_state[PREDATOR].cell.id]++;
     }
     PERF_STOP("Tree_search::get_best_move_ucb1:start");
-    return Move(0,0);
     if (history_step.prey_state.capture) {
         return No_move;
     }

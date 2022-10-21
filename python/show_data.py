@@ -57,9 +57,7 @@ with open(results_file, "w") as results_file:
 
     for x in glob.glob("*"):
         if os.path.isdir(x):
-            if len(x.split(".")) == 1:
-                continue
-            world = x.split(".")[1]
+            world = "21_05"
             world_number = world.split("_")[0]
             entropy_bucket = world.split("_")[1]
             clustering = "100% of occlusion count"

@@ -1,5 +1,5 @@
 #include <thread_pool.h>
-#include <gauges/include/gauges.h>
+#include <gauges.h>
 #include <cell_world.h>
 #include <performance.h>
 

@@ -35,9 +35,10 @@ install_git_dependency(Gauges
         https://github.com/germanespinosa/gauges
         INCLUDE_DIRECTORIES include)
 
-install_git_dependency(Perf-analysis
+install_git_dependency( Perf-analysis
         https://github.com/germanespinosa/perf-analysis
         CMAKE_PROJECT
+        IMPORT_TARGETS perf-analysis
         INCLUDE_DIRECTORIES include)
 
 string(APPEND CMAKE_CXX_FLAGS " -fno-strict-aliasing -pthread")
@@ -63,7 +64,8 @@ add_library(cellworld_planner ${cellworld_planner_files})
 install_git_dependency(Cellworld
         https://github.com/germanespinosa/cellworld
         PRIVATE
-        CMAKE_PROJECT)
+        CMAKE_PROJECT
+        IMPORT_TARGETS cellworld)
 
 message("Cellworld_IMPORTED_TARGETS: ${Cellworld_IMPORT_TARGETS}")
 

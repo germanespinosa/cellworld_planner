@@ -12,10 +12,10 @@ project(cellworld_planner
 #### DEPENDENCIES
 ####
 
-#if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/DependenciesConfig.cmake)
-#    file(DOWNLOAD https://raw.githubusercontent.com/germanespinosa/dependencies/main/DependenciesConfig.cmake ${CMAKE_CURRENT_SOURCE_DIR}/DependenciesConfig.cmake)
-#endif()
-#set(Dependencies_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/DependenciesConfig.cmake)
+    file(DOWNLOAD https://raw.githubusercontent.com/germanespinosa/dependencies/main/DependenciesConfig.cmake ${CMAKE_BINARY_DIR}/DependenciesConfig.cmake)
+endif()
+set(Dependencies_DIR "${CMAKE_BINARY_DIR}")
 find_package (Dependencies REQUIRED)
 
 ####

@@ -1,3 +1,4 @@
+#include <cell_world/core.h>
 #include <cell_world/cell_group.h>
 #include <cell_world/world.h>
 #include <cell_world/graph.h>

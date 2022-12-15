@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
     }
 
     int workers = 8;
-    Thread_pool tp(8);
+    Thread_pool tp;
     Experiment experiment;
     if (!experiment.load(experiment_file)){
         cout << "Failed to open experiment file." << endl;

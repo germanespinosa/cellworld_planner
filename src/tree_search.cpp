@@ -3,6 +3,7 @@
 
 using namespace std;
 using namespace cell_world;
+using namespace json_cpp;
 
 namespace cell_world::planner {
 

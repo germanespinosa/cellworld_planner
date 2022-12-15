@@ -1,22 +1,37 @@
 #!/bin/bash
-
+#
+#(
+#cd "/research/googledrive/MacIver Lab: Habitat/Data/PEEK/"
+#for FILE in * ; do
+#  if [ -d "$FILE" ]; then
+#    echo $FILE
+#    (
+#      cd "$FILE"
+#      EXPERIMENT_FILE="${FILE}_experiment_full.json"
+#      SIMULATION_FILE="${FILE}_simulation.json"
+#
+#      echo "Experiment file: $EXPERIMENT_FILE"
+#      echo "Simulation file: $SIMULATION_FILE"
+#      if [ ! -f "$SIMULATION_FILE.json" ]; then
+#        /mnt/c/Research/cellworld_planner/cmake-build-debug/create_simulation -e ${EXPERIMENT_FILE} -s ${SIMULATION_FILE} -c /mnt/c/Research/cellworld_planner/config/belief_state_creation.json
+#      fi
+#    )
+#  fi
+#done
+#)
 
 (
-cd "/research/googledrive/MacIver Lab: Habitat/Data/PEEK/"
-for FILE in * ; do
-  if [ -d "$FILE" ]; then
-    echo $FILE
+cd "/research/googledrive/MacIver Lab: Habitat/Trajectory Data/Logs/DREADDS"
+for FILE in *_experiment.json ; do
     (
-      cd "$FILE"
-      EXPERIMENT_FILE="${FILE}_experiment_full.json"
-      SIMULATION_FILE="${FILE}_simulation.json"
+      EXPERIMENT_FILE="${FILE}"
+      SIMULATION_FILE="Simulation_logs/${FILE}"
 
       echo "Experiment file: $EXPERIMENT_FILE"
       echo "Simulation file: $SIMULATION_FILE"
       if [ ! -f "$SIMULATION_FILE.json" ]; then
-        /mnt/c/Research/cellworld_planner/cmake-build-debug/create_simulation -e ${EXPERIMENT_FILE} -s ${SIMULATION_FILE} -c /mnt/c/Research/cellworld_planner/config/belief_state_creation.json
+        /research/cellworld_planner/cmake-build-debug/create_simulation -e ${EXPERIMENT_FILE} -s ${SIMULATION_FILE} -c /research/cellworld_planner/config/belief_state_creation.json
       fi
     )
-  fi
 done
 )

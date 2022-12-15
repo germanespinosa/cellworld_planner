@@ -2,7 +2,7 @@
 
 
 (
-cd "/mnt/g/.shortcut-targets-by-id/1pwsS5t5w38pVgz13-pt77fN4b5YxGlhq/MacIver Lab  Habitat/Data/PEEK/"
+cd "/research/googledrive/MacIver Lab: Habitat/Data/PEEK/"
 for FILE in * ; do
   if [ -d "$FILE" ]; then
     echo $FILE

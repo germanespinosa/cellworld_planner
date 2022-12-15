@@ -35,7 +35,7 @@ install_git_dependency(Gauges
         https://github.com/germanespinosa/gauges
         INCLUDE_DIRECTORIES include)
 
-install_git_dependency( Perf-analysis
+install_git_dependency(Perf-analysis
         https://github.com/germanespinosa/perf-analysis
         CMAKE_PROJECT
         IMPORT_TARGETS perf-analysis
@@ -54,6 +54,9 @@ set( cellworld_planner_files
         src/prey.cpp
         src/thig_prey.cpp
         src/lppo.cpp
+        src/option.cpp
+        src/history_step.cpp
+        src/directed_tree_search.cpp
         src/statistics.cpp
         src/world_creation.cpp
         src/belief_state_location.cpp
@@ -136,13 +139,11 @@ target_link_libraries( thig_simulation
         PRIVATE
         cellworld_planner )
 
-
 add_executable(create_simulation src/tools/create_simulation.cpp)
 
 target_link_libraries( create_simulation
         PRIVATE
         cellworld_planner )
-
 
 add_executable(create_statistics src/tools/create_statistics.cpp)
 

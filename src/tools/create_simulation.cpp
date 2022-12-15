@@ -61,6 +61,7 @@ void create_trajectories ( const Static_data &data,
                            Simulation_episode& sim_episode,
                            const Episode &experiment_episode,
                            float prey_speed) {
+    Location_visibility lv(data.cells,data.world.cell_shape,data.world.cell_transformation);
     double time_step = 0;
     Agents_cells agent_cells;
     Agents_cells first_agent_cells;
@@ -72,11 +73,7 @@ void create_trajectories ( const Static_data &data,
             agent_cells.prey = cell_id;
             agent_cells.prey_orientation = to_radians(step.rotation);
             agent_cells.prey_location = step.location;
-            Line_of_sight s;
-            step.data >> s;
-            if (s.visible) {
-                agent_cells.los = true;
-            }
+            agent_cells.los = lv.is_visible(agent_cells.prey_location,agent_cells.predator_location);
         } else {
             agent_cells.predator = cell_id;
             agent_cells.predator_location = step.location;
@@ -133,19 +130,24 @@ int main(int argc, char **argv) {
     auto simulation_file = p.get(Key("-s", "--simulation_file"), "");
     auto prey_speed = stof(p.get(Key("-ps", "--prey_speed"), ".116"));
     auto configuration_file = p.get(Key("-c","--configuration_file"),"");
+
     if (experiment_file.empty()) {
         cout << "Missing experiment file parameter." << endl;
         exit(1);
     }
+
     if (configuration_file.empty()){
         cout << "Missing simulation configuration file parameter." << endl;
         exit(1);
     }
 
     int workers = 8;
-    Thread_pool tp;
+    Thread_pool tp(8);
     Experiment experiment;
-    experiment.load(experiment_file);
+    if (!experiment.load(experiment_file)){
+        cout << "Failed to open experiment file." << endl;
+        exit(1);
+    }
     Simulation simulation;
     simulation.world_info.world_implementation = "canonical";
     simulation.world_info.world_configuration = experiment.world_configuration_name;
@@ -160,17 +162,18 @@ int main(int argc, char **argv) {
 
     auto cells = world.create_cell_group();
     Prey_state prey_state;
-    Predator_state predator_state;
 
     simulation.episodes = json_cpp::Json_vector<Simulation_episode>(experiment.episodes.size());
     for (int e = 0 ; e < experiment.episodes.size(); e++) {
         auto &episode = experiment.episodes[e];
         cout << "Processing trajectories " << e << endl;
         auto &sim_episode = simulation.episodes[e];
-        create_trajectories (data, sim_episode, episode, prey_speed);
+        tp.run([&data, &sim_episode, &episode, &prey_speed]() {
+            create_trajectories(data, sim_episode, episode, prey_speed);
+        });
     }
     tp.wait_all();
-    simulation.save(simulation_file+".json");
+    simulation.save(simulation_file + ".json");
     Simulation_statistics stats(simulation, data);
     stats.save(simulation_file + "_stats.json");
 }

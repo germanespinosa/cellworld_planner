@@ -1,39 +1,13 @@
 #pragma once
 #include <cell_world.h>
+#include <cellworld_planner/option.h>
+#include <cellworld_planner/history_step.h>
 #include <cellworld_planner/agents.h>
 #include <cellworld_planner/belief_state.h>
 #include <json_cpp.h>
 #include <performance.h>
 
 namespace cell_world::planner{
-
-    struct Option {
-        Option(const Cell &cell, const Graph &graph);
-        const Cell &cell;
-        const Graph &graph;
-        void load();
-        Option &get_best_option(float exploration);
-        std::vector<float> rewards;
-        std::vector<unsigned int> counters;
-        std::vector<Option> options;
-        std::vector<float> get_ucb1(float exploration);
-        int best_option = Not_found;
-        void update_reward(float);
-    };
-
-    struct History_step : json_cpp::Json_object {
-        History_step() = default;
-        explicit History_step(const Model_public_state &);
-        Prey_state prey_state;
-        Predator_state predator_state;
-        Model_public_state state;
-        Json_object_members(
-                Add_member(prey_state);
-                Add_member(predator_state);
-                Add_member(state);
-                )
-    };
-
     struct Tree_search {
         explicit Tree_search(const Static_data &, Predator &);
         void record(const Model_public_state &);

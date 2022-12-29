@@ -127,3 +127,11 @@ void planner::Belief_state::reset() {
         model.end_episode();
     }
 }
+
+Json_unsigned_int_vector planner::Belief_state::get_particle_count() {
+    cell_world::Json_unsigned_int_vector particle_count(data.cells.size(), 0);
+    for (auto &particle: particles) {
+        particle_count[particle.public_state.agents_state[PREDATOR].cell.id]++;
+    }
+    return particle_count;
+}

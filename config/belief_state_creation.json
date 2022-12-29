@@ -5,11 +5,13 @@
       "max_particle_creation_attempts": 10000
     },
     "simulations": 1,
-    "depth": 50
+    "depth": 5000
   },
   "predator_parameters": {
-    "pursue_speed": 1.5,
-    "exploration_speed": 1.0
+    "pursue_speed": 0.40,
+    "exploration_speed": 0.40,
+
+    "randomness":0.25
   },
   "reward": {
     "capture_cost": 100,

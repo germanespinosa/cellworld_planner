@@ -32,8 +32,8 @@ struct Agents_cells : json_cpp::Json_object {
         prey_location(prey_location),
         prey_orientation(prey_orientation),
         predator_location(predator_location){}
-    int prey{};
-    int predator{};
+    int prey{Not_found};
+    int predator{Not_found};
     unsigned int frame{};
     Location prey_location{};
     float prey_orientation{};
@@ -50,7 +50,7 @@ struct Simulation_step_data : json_cpp::Json_object {
     unsigned int frame{};
 };
 
-struct Line_of_sight  : json_cpp::Json_object{
+struct Line_of_sight  : json_cpp::Json_object {
     Json_object_members(
             Add_member_with_name(visible,true,"LOS");
     )
@@ -64,6 +64,8 @@ void create_trajectories ( const Static_data &data,
     Location_visibility lv(data.cells,data.world.cell_shape,data.world.cell_transformation);
     double time_step = 0;
     Agents_cells agent_cells;
+    agent_cells.prey = -1;
+    agent_cells.predator = -1;
     Agents_cells first_agent_cells;
     bool first = true;
     json_cpp::Json_vector<Agents_cells> episode_cells;
@@ -92,7 +94,7 @@ void create_trajectories ( const Static_data &data,
         }
     }
     if (episode_cells.empty()) return;
-    Model model(data.cells);
+    Model model(data.cells, episode_cells.size() + 1);
     Predator no_predator(data);
     Agent_internal_state_container c(sizeof(Predator_state));
     no_predator.set_internal_state(c, true);

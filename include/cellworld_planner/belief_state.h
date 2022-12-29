@@ -32,5 +32,6 @@ namespace cell_world::planner {
         Model_state get_particle();
         Model_state get_root_state();
         void reset();
+        Json_unsigned_int_vector get_particle_count();
     };
 }

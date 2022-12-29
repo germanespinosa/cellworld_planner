@@ -34,9 +34,9 @@ Move planner::Predator::get_move(const Model_public_state &public_state) {
             internal_state.behavior = Predator_state::Exploring;
         }
     }
-    auto speed = data.simulation_parameters.predator_parameters.exploration_speed;
+    auto speed = exploration_speed;
     if (internal_state.behavior == Predator_state::Pursuing){
-        speed = data.simulation_parameters.predator_parameters.pursue_speed;
+        speed = pursue_speed;
     }
     int confirmed_moves = int (speed);
     float final_move_probability = speed - confirmed_moves;
@@ -53,7 +53,9 @@ Move planner::Predator::get_move(const Model_public_state &public_state) {
 }
 
 planner::Predator::Predator(const planner::Static_data &data):
-        data(data) {
+        data(data),
+        exploration_speed(data.simulation_parameters.predator_parameters.exploration_speed),
+        pursue_speed(data.simulation_parameters.predator_parameters.pursue_speed){
 }
 
 Agent_status_code planner::Predator::update_state(const Model_public_state &public_state) {

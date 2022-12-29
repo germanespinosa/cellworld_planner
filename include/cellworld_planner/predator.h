@@ -11,6 +11,7 @@ namespace cell_world::planner {
         Move get_move(const Model_public_state &) override;
         Agent_status_code update_state(const Model_public_state &) override;
         const Static_data &data;
+        double exploration_speed;
+        double pursue_speed;
     };
-
 }

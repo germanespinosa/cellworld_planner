@@ -60,6 +60,7 @@ set( cellworld_planner_files
         src/statistics.cpp
         src/world_creation.cpp
         src/belief_state_location.cpp
+        src/belief_state_variable_time.cpp
         src/tree_search_location.cpp)
 
 add_library(cellworld_planner ${cellworld_planner_files})
@@ -142,6 +143,12 @@ target_link_libraries( thig_simulation
 add_executable(create_simulation src/tools/create_simulation.cpp)
 
 target_link_libraries( create_simulation
+        PRIVATE
+        cellworld_planner )
+
+add_executable(create_belief_state src/tools/create_belief_state.cpp)
+
+target_link_libraries( create_belief_state
         PRIVATE
         cellworld_planner )
 

@@ -12,9 +12,10 @@ namespace cell_world::planner {
         Move move;
         Location prey_location;
         float prey_orientation;
+        float  time;
     };
-    struct Belief_state_location {
-        Belief_state_location(const Static_data &data);
+    struct Belief_state_variable_time {
+        Belief_state_variable_time(const Static_data &data);
         std::vector<Model_state> particles;
         std::vector<Move_location> history;
         const Static_data &data;
@@ -25,7 +26,7 @@ namespace cell_world::planner {
         Model_state root_state;
         Coordinates previous_prey_coordinates;
         unsigned int history_length;
-        void record_state(const Model_public_state &state, const Location &prey_location, float prey_orientation, const Location &predator_location, bool is_visible);
+        void record_state(const Model_public_state &state, const Location &prey_location, float prey_orientation, const Location &predator_location, bool is_visible, float time);
         Model_state get_particle();
         Model_state get_root_state();
         void reset();

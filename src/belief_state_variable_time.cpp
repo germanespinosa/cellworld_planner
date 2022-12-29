@@ -1,11 +1,11 @@
-#include <cellworld_planner/belief_state_location.h>
+#include <cellworld_planner/belief_state_variable_time.h>
 #include <json_cpp.h>
 
 using namespace json_cpp;
 using namespace cell_world;
 using namespace std;
 
-planner::Belief_state_location::Belief_state_location(const Static_data &data):
+planner::Belief_state_variable_time::Belief_state_variable_time(const Static_data &data):
     data(data),
     visibility(data.cells,data.world.cell_shape,data.world.cell_transformation),
     prey(data),
@@ -15,10 +15,9 @@ planner::Belief_state_location::Belief_state_location(const Static_data &data):
     model.add_agent(predator);
 }
 
-void planner::Belief_state_location::record_state(const Model_public_state &state, const Location &prey_location, float prey_orientation, const Location &predator_location, bool is_visible) {
+void planner::Belief_state_variable_time::record_state(const Model_public_state &state, const Location &prey_location, float prey_orientation, const Location &predator_location, bool is_visible, float time) {
     PERF_SCOPE("Belief_state::record_state");
     auto &prey_state = state.agents_state[PREY];
-    auto &predator_state = state.agents_state[PREDATOR];
     // if the predator is visible
     if (is_visible){
         // then history collapses
@@ -41,16 +40,14 @@ void planner::Belief_state_location::record_state(const Model_public_state &stat
         // if the state is post-turn, no need to filter yet
         if (state.current_turn == PREY) {
             Move last_move = prey_state.cell.coordinates - previous_prey_coordinates;
-            history.push_back({last_move,prey_location,prey_orientation});
+            history.push_back({last_move,prey_location,prey_orientation, time});
             // evolve all particles
-            for (auto &particle: particles) {
-                model.set_state(particle);
-                model.update();
-            }
             vector<Model_state> new_particles;
             for (auto &particle: particles) {
                 model.set_state(particle);
                 prey.next_move = last_move;
+                predator.pursue_speed = data.simulation_parameters.predator_parameters.pursue_speed * time;
+                predator.exploration_speed = data.simulation_parameters.predator_parameters.exploration_speed * time;
                 model.update(); // PREDATOR's turn
                 model.update(); // PREY's turn
                 auto &prey_cell = model.state.public_state.agents_state[PREY].cell;
@@ -61,12 +58,15 @@ void planner::Belief_state_location::record_state(const Model_public_state &stat
                 model.end_episode();
             }
             for (int i = 0;
-                 i < data.simulation_parameters.tree_search_parameters.belief_state_parameters.max_particle_creation_attempts && new_particles.size() < data.simulation_parameters.tree_search_parameters.belief_state_parameters.max_particle_count; i++) {
+                 i < data.simulation_parameters.tree_search_parameters.belief_state_parameters.max_particle_creation_attempts &&
+                 new_particles.size() < data.simulation_parameters.tree_search_parameters.belief_state_parameters.max_particle_count; i++) {
                 auto root_state = get_root_state();
                 bool valid = true;
                 model.set_state(root_state);
                 for (auto move: history) {
                     prey.next_move = move.move;
+                    predator.pursue_speed = data.simulation_parameters.predator_parameters.pursue_speed * move.time;
+                    predator.exploration_speed = data.simulation_parameters.predator_parameters.exploration_speed * move.time;
                     model.update(); // PREDATOR's turn
                     model.update(); // PREY's turn
                     auto &prey_cell = model.state.public_state.agents_state[PREY].cell;
@@ -87,11 +87,11 @@ void planner::Belief_state_location::record_state(const Model_public_state &stat
     }
 }
 
-Model_state planner::Belief_state_location::get_particle() {
+Model_state planner::Belief_state_variable_time::get_particle() {
     return pick_random(particles);
 }
 
-Model_state planner::Belief_state_location::get_root_state() {
+Model_state planner::Belief_state_variable_time::get_root_state() {
     PERF_SCOPE("Belief_state::get_root_state");
     if (root_state.public_state.agents_state.empty()) {
         model.start_episode();
@@ -103,7 +103,7 @@ Model_state planner::Belief_state_location::get_root_state() {
     }
 }
 
-void planner::Belief_state_location::reset() {
+void planner::Belief_state_variable_time::reset() {
     PERF_SCOPE("Belief_state::reset");
     history.clear();
     previous_prey_coordinates = data.start_cell().coordinates;
@@ -116,7 +116,7 @@ void planner::Belief_state_location::reset() {
     }
 }
 
-Json_unsigned_int_vector planner::Belief_state_location::get_particle_count() {
+Json_unsigned_int_vector planner::Belief_state_variable_time::get_particle_count() {
     cell_world::Json_unsigned_int_vector particle_count(data.cells.size(), 0);
     for (auto &particle: particles) {
         particle_count[particle.public_state.agents_state[PREDATOR].cell.id]++;

@@ -74,7 +74,7 @@ namespace cell_world::planner {
             int depth = 1;
             PERF_START("Tree_search::get_best_move_ucb1:episode");
             for (unsigned int t = 0;
-                 t < data.simulation_parameters.tree_search_parameters.depth && !episode_finished; t++) {
+                t < data.simulation_parameters.tree_search_parameters.depth && !episode_finished; t++) {
                 float step_value = -data.simulation_parameters.reward.step_cost;
                 auto &prey_cell = sim_prey.public_state().cell;
                 if (prey_cell == data.goal_cell()) {

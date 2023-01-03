@@ -1,6 +1,5 @@
 from threading import Thread
 import sys
-from json_cpp import *
 from cellworld import *
 from src.video_writer import VideoWriter
 from matplotlib import pyplot as plt
@@ -67,9 +66,8 @@ class Step_additional_info(JsonObject):
         JsonObject.__init__(self)
 
 
-episode_number = int(sys.argv[1])
 additional_data = JsonList(list_type=Step_additional_info)
-additional_data.load_from_file("../results/episode_" + str(episode_number))
+additional_data.load_from_file(sys.argv[1])
 
 speed_filter_value = .9
 acceleration_filter_value = .999
@@ -276,8 +274,6 @@ for i in frame_los:
         frame_reactive_los.append(i)
 
 
-peeks_video = VideoWriter("../results/episode_" + str(episode_number) + "_peeks.mp4", fig.canvas.get_width_height(), fps)
-
 for i, c in enumerate(cycles):
     if cycles_behavior[i] == 1:
         plot_ax.add_patch(patches.Rectangle((c[0], 0), c[-1], max(avg_speed), facecolor="lightgreen", zorder=-1))
@@ -299,7 +295,7 @@ plot_ax.scatter(frame_reactive_peeks, [frame_speed[m] for m in frame_reactive_pe
 
 progress = plot_ax.axvline(x=0, color='black')
 
-video = VideoWriter("../results/episode_" + str(episode_number) + ".mp4", fig.canvas.get_width_height(), fps)
+video = VideoWriter(sys.argv[3], fig.canvas.get_width_height(), fps)
 last_frame = additional_data[0].frame
 ret, video_frame = episode_video.read()
 video_frame_margin = 0.045

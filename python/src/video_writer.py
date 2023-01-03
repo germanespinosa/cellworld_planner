@@ -1,7 +1,7 @@
 from moviepy.video.io.ffmpeg_writer import *
 from matplotlib import figure
 import numpy as np
-
+from threading import Thread
 
 class VideoWriter:
     def __init__(self,
@@ -30,11 +30,22 @@ class VideoWriter:
             ffmpeg_params=ffmpeg_params)
         self.cols, self.rows = size
         self.fps = fps
+        self.ready = True
+
+
+    def __write_buffer__(self, buffer, repeat=None, duration=None):
+        npa = np.frombuffer(buffer, dtype=np.uint8).reshape(self.rows, self.cols, 3)
+        self.write(npa, repeat=repeat, duration=duration)
+        self.ready = True
+
 
     def write_figure(self, fig: figure, repeat=None, duration=None):
         buffer = fig.canvas.tostring_rgb()
-        npa = np.frombuffer(buffer, dtype=np.uint8).reshape(self.rows, self.cols, 3)
-        self.write(npa, repeat=repeat, duration=duration)
+        while not self.ready:
+            pass
+        self.ready = False
+        Thread(target=self.__write_buffer__, args=(buffer, repeat, duration)).start()
+        self.__write_buffer__(buffer, repeat, duration)
 
     def write(self, frame, repeat=0, duration=None):
         if duration:

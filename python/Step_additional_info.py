@@ -3,26 +3,14 @@ import sys
 from cellworld import *
 from src.video_writer import VideoWriter
 from matplotlib import pyplot as plt
-from matplotlib import gridspec
-from matplotlib import patches
+from matplotlib.patches import Arc
+from matplotlib import gridspec, patches
 import cv2
-
-fig = plt.figure(figsize=(6.3, 8))
-
-spec = gridspec.GridSpec(ncols=1, nrows=2,
-                         wspace=0,
-                         hspace=0.01, height_ratios=[3, 1])
-
-map_ax = fig.add_subplot(spec[0])
-plot_ax = fig.add_subplot(spec[1])
-
-w = World.get_from_parameters_names("hexagonal", "canonical", "21_05")
 
 episode_video = None
 fps = None
 cropped_frames = []
 video_ready = False
-
 
 def load_video(video_reader):
     global cropped_frames, video_ready
@@ -43,6 +31,18 @@ if len(sys.argv) > 2:
     else:
         Thread(target=load_video, args=(episode_video,)).start()
 
+
+
+fig = plt.figure(figsize=(6.3, 8))
+
+spec = gridspec.GridSpec(ncols=1, nrows=2,
+                         wspace=0,
+                         hspace=0.01, height_ratios=[3, 1])
+
+map_ax = fig.add_subplot(spec[0])
+plot_ax = fig.add_subplot(spec[1])
+
+w = World.get_from_parameters_names("hexagonal", "canonical", "21_05")
 
 class Step_additional_info(JsonObject):
     def __init__(self):
@@ -69,10 +69,7 @@ class Step_additional_info(JsonObject):
 additional_data = JsonList(list_type=Step_additional_info)
 additional_data.load_from_file(sys.argv[1])
 
-speed_filter_value = .9
-acceleration_filter_value = .999
 mouse_speed = 0
-mouse_acceleration = 0
 prev_speed = 0
 a = False
 l = False
@@ -82,11 +79,9 @@ free_cells = len(w.cells)
 
 speed = [s.mouse_speed for s in additional_data]
 avg_speed = [sum(speed[i-5 if i > -5 else 0:i+5 if i+5 < len(speed) else len(speed)-1])/((i+5 if i+5 < len(speed) else len(speed)-1) - (i-5 if i > -5 else 0)) for i in range(len(speed))]
-avg_acceleration = [avg_speed[i] - avg_speed[i-1 if i > 0 else 0] for i in range(len(avg_speed))]
 frame_numbers = [s.frame for s in additional_data]
 total_frames = max(frame_numbers) + 1
 witor = [s.weighted_itor if s.weighted_itor >= 0 else 0 for s in additional_data]
-itor = [s.itor for s in additional_data]
 time_stamps = [s.time_stamp for s in additional_data]
 bs_spread = [sum([0 if h == 0 else 1 for h in s.belief_state]) / free_cells for s in additional_data]
 los = [i for i, s in enumerate(additional_data) if s.los]
@@ -99,7 +94,7 @@ def get_peeks(values, time_stamps, threshold=5, period=.25):
         c = 0
         tt = time_stamps[i] + period
         while ii < len(values) and time_stamps[ii] <= tt:
-            if values[ii] > .5:#more information is obtained than provided
+            if values[ii] > .5: #more information is obtained than provided
                 c += 1
             ii += 1
         if c >= threshold:
@@ -147,54 +142,66 @@ def heat_map(ax, world, values, value_range: tuple = None, los: bool = False):
                 )
 
 
-def get_peaks(values, band_ratio=.05):
+def get_peaks(values, time_stamps, band_size):
     minimas = []
     maximas = []
     if len(values) > 0:
-        lp = values[0]
-        band_size = int(len(values) * band_ratio)
+        lpm = values[0]
         last_peak_type = 0
         for i, v in enumerate(values):
-            band_start = 0 if i < band_size else i - band_size
-            band_finish = len(values)-1 if i >= len(values)-band_size else i + band_size
+            band_start = i
+            while band_start > 0 and time_stamps[band_start] > time_stamps[i]-band_size/2:
+                band_start -= 1
+            band_finish = i
+            while band_finish < len(values) - 1 and time_stamps[band_finish] < time_stamps[i]+band_size/2:
+                band_finish += 1
             band_min = min(values[band_start:band_finish])
             band_max = max(values[band_start:band_finish])
-            if band_min == v and v < lp:
+            if band_min == v and v < lpm:
                 if last_peak_type == -1:
                     minimas[-1] = i
                 else:
                     minimas.append(i)
                 last_peak_type = -1
-                lp = v
+                lpm = v
 
-            if band_max == v and v > lp:
+            if band_max == v and v > lpm:
                 if last_peak_type == 1:
                     maximas[-1] = i
                 else:
                     maximas.append(i)
                 last_peak_type = 1
-                lp = v
+                lpm = v
     return minimas, maximas
 
 
 peeks = get_peeks(witor, time_stamps)
-minimas, maximas = get_peaks(avg_speed)
+minimas, maximas = get_peaks(avg_speed, time_stamps, 1.0)
 
 lf = 0
 first_valid_frame = 0
+first_valid_time = 0
 for s in additional_data:
     if s.mouse_body.dist(Location(0, .5)) >= .1:
         break
     first_valid_frame = s.frame
+    first_valid_time = s.time_stamp
+
+adjusted_time_stamp = [ts - first_valid_time for ts in time_stamps]
 
 plot_ax.add_patch(patches.Rectangle((0, 0), first_valid_frame, max(avg_speed), facecolor="lightgray", zorder=-1))
-
 frame_speed = [0 if i not in frame_numbers else avg_speed[frame_numbers.index(i)] for i in range(total_frames)]
 frame_peeks = [frame_numbers[m] for m in peeks if frame_numbers[m] >= first_valid_frame]
 frame_minimas = [frame_numbers[m] for m in minimas if frame_numbers[m] >= first_valid_frame]
 frame_maximas = [frame_numbers[m] for m in maximas if frame_numbers[m] >= first_valid_frame]
 frame_los = [frame_numbers[m] for m in los if frame_numbers[m] >= first_valid_frame]
-acceleration_sign = [1 if f in frame_minimas else -1 if f in frame_maximas else 0 for f in range(total_frames)]
+
+time_speed = [0 if i not in time_stamps else avg_speed[time_stamps.index(i)] for i in range(total_frames)]
+time_peeks = [time_stamps[m] for m in peeks if time_stamps[m] >= first_valid_time]
+time_minimas = [time_stamps[m] for m in minimas if time_stamps[m] >= first_valid_time]
+time_maximas = [time_stamps[m] for m in maximas if time_stamps[m] >= first_valid_time]
+time_los = [time_stamps[m] for m in los if time_stamps[m] >= first_valid_time]
+
 
 a_s = 0
 i = 0
@@ -209,11 +216,11 @@ for ma in frame_maximas:
     mid_points.append(int((cmi+ma)/2))
 
 
-cycles = [[]]
+cycles = [[time_stamps[0]]]
 cycles_behavior = [0]
 cycles_stop = [False]
 cycles_peeks = [0]
-for i in frame_numbers:
+for n, i in enumerate(frame_numbers):
     if i < first_valid_frame:
         continue
     if cycles_behavior[-1] == 0:
@@ -237,61 +244,25 @@ for i in frame_numbers:
         cycles_behavior.append(0)
         cycles_stop.append(False)
         cycles_peeks.append(False)
-        cycles[-1].append(i)
-        cycles.append([])
-    cycles[-1].append(i)
-
-print(cycles_behavior)
-print(cycles_stop)
-
-behavior = [0 for f in range(total_frames)]
-
-predictive = 1
-for i, a in enumerate(acceleration_sign):
-    if i in frame_los:
-        if a == 1:
-            predictive = 0
-    if i in frame_minimas:
-        predictive = 1
-    behavior[i] = predictive
-
-frame_predictive_peeks = []
-frame_reactive_peeks = []
-for i in frame_peeks:
-    if behavior[i] == 1:
-        frame_predictive_peeks.append(i)
-    else:
-        frame_reactive_peeks.append(i)
-
-frame_predictive_los = []
-frame_reactive_los = []
-for i in frame_los:
-    if i < first_valid_frame:
-        continue
-    if behavior[i] == 1:
-        frame_predictive_los.append(i)
-    else:
-        frame_reactive_los.append(i)
-
+        cycles[-1].append(time_stamps[n])
+        cycles.append([time_stamps[n]])
 
 for i, c in enumerate(cycles):
     if cycles_behavior[i] == 1:
-        plot_ax.add_patch(patches.Rectangle((c[0], 0), c[-1], max(avg_speed), facecolor="lightgreen", zorder=-1))
+        if cycles_stop[i]:
+            plot_ax.add_patch(patches.Rectangle((c[0], -0.05), c[-1], max(avg_speed) + .1, facecolor=(.5, 1.0, .5), zorder=-1))
+        else:
+            plot_ax.add_patch(patches.Rectangle((c[0], -0.05), c[-1], max(avg_speed) + .1, facecolor=(.8, 1.0, .8), zorder=-1))
     else:
-        plot_ax.add_patch(patches.Rectangle((c[0], 0), c[-1], max(avg_speed), facecolor="lightblue", zorder=-1))
+        plot_ax.add_patch(patches.Rectangle((c[0], -0.05), c[-1], max(avg_speed) + .1, facecolor="lightgray", zorder=-1))
     plot_ax.axvline(x=c[0], color='blue')
 
-
-plot_ax.plot(frame_numbers, avg_speed, zorder=10)
-
-plot_ax.plot(frame_numbers, bs_spread, zorder=9)
-# plot_ax.plot(behavior, zorder=10)
-plot_ax.scatter(frame_minimas, [frame_speed[m] for m in frame_minimas], marker="x", zorder=15)
-plot_ax.scatter(frame_maximas, [frame_speed[m] for m in frame_maximas], marker="x", zorder=15)
-plot_ax.scatter(frame_predictive_los, [frame_speed[m] for m in frame_predictive_los], marker=".", color='red', zorder=11, alpha=1)
-plot_ax.scatter(frame_reactive_los, [frame_speed[m] for m in frame_reactive_los], marker="x", color='red', zorder=11, alpha=.5)
-plot_ax.scatter(frame_predictive_peeks, [frame_speed[m] for m in frame_predictive_peeks], marker=".", color='purple', zorder=11, alpha=1)
-plot_ax.scatter(frame_reactive_peeks, [frame_speed[m] for m in frame_reactive_peeks], marker="x", color='purple', zorder=11, alpha=.5)
+plot_ax.plot(time_stamps, avg_speed, zorder=10)
+plot_ax.plot(time_stamps, bs_spread, zorder=9)
+plot_ax.scatter(time_minimas, [frame_speed[m] for m in frame_minimas], color='orange', marker="x", zorder=15)
+plot_ax.scatter(time_maximas, [frame_speed[m] for m in frame_maximas], color='orange', marker="x", zorder=15)
+plot_ax.scatter(time_los, [frame_speed[m] for m in frame_los], marker=".", color='red', zorder=11, alpha=1)
+plot_ax.scatter(time_peeks, [frame_speed[m] for m in frame_peeks], marker=".", color='purple', zorder=11, alpha=1)
 
 progress = plot_ax.axvline(x=0, color='black')
 
@@ -299,7 +270,6 @@ video = VideoWriter(sys.argv[3], fig.canvas.get_width_height(), fps)
 last_frame = additional_data[0].frame
 ret, video_frame = episode_video.read()
 video_frame_margin = 0.045
-from matplotlib.patches import Arc
 
 while not video_ready:
     pass
@@ -311,9 +281,13 @@ map_ax.axes.yaxis.set_visible(False)
 # d = Display(w, fig=fig, ax=map_ax, animated=True)
 arco = Arc((0, .5), .1, .1, 0, 300, 60, color='purple', lw=1)
 
-for s in additional_data:
+last_frame = additional_data[0].frame
+last_time_stamp = additional_data[0].time_stamp
+
+for i, s in enumerate(additional_data):
     first = True
     for f in range(last_frame, s.frame):
+        current_time_stamp = last_time_stamp + (s.time_stamp - last_time_stamp) / (s.frame - last_frame) * (f - last_frame)
         t = Timer()
         if f < first_valid_frame:
             continue
@@ -331,18 +305,19 @@ for s in additional_data:
                          head_width=.01,
                          length_includes_head=True,
                          alpha=1)
-        progress.set_xdata(f)
+        progress.set_xdata(current_time_stamp)
         map_ax.set_xlim(xmin=0, xmax=1)
         map_ax.set_ylim(ymin=0.05, ymax=.95)
-        plot_ax.set_xlim(xmin=first_valid_frame, xmax=total_frames)
-        plot_ax.set_ylim(ymin=0, ymax=max(avg_speed))
+        plot_ax.set_xlim(xmin=first_valid_time, xmax=max(time_stamps))
+        plot_ax.set_ylim(ymin=-0.05, ymax=max(avg_speed) + .05)
         map_ax.add_patch(arco)
         fig.canvas.draw()
         video.write_figure(fig, repeat=0)
         map_ax.cla()
         first = False
         t1 = t.to_seconds()
-        print(t1, f)
+        print("%i: %f" % (f, t1))
     last_frame = s.frame
+    last_time_stamp = s.time_stamp
 
 video.close()

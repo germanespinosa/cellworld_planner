@@ -25,6 +25,7 @@ if build:
 	else:
 		print('use twine upload --repository-url [pypi-repository-url] dist/* to upload the package')
 	if '-install' in sys.argv:
+		import os
 		os.system('cd ' + build + '; pip install .')
 	module.save('.')
 else:

@@ -115,7 +115,8 @@ Location_list get_robot_vertices( const Location &robot_center, float theta) {
 void create_additional_step_data (const Static_data &data,
                                   json_cpp::Json_vector<Step_additional_info>& belief_state_progress,
                                   const Episode &experiment_episode,
-                                  size_t episode_number) {
+                                  size_t episode_number,
+                                  std::string folder) {
     Agents_cells agent_cells;
     agent_cells.prey = data.start_cell_id;
     agent_cells.prey_orientation = Location(0,.5).atan(Location(1,.5));
@@ -145,6 +146,7 @@ void create_additional_step_data (const Static_data &data,
     float last_mouse_speed = 0;
     bool first = true;
     Json_unsigned_int_vector prev_particles = data.cells.process<unsigned int>([](const Cell &c){return c.occluded?0:1;});
+    bool episode_started = false;
     for (auto &step : experiment_episode.trajectories) {
         if (last_f != step.frame) {
             delta_t = step.time_stamp - last_t;
@@ -161,6 +163,9 @@ void create_additional_step_data (const Static_data &data,
             agent_cells.prey_orientation = to_radians(step.rotation);
             mouse_orientation = agent_cells.prey_orientation;
             last_mouse_body = mouse_body;
+            if (mouse_body.dist(Location(0,.5))>=.1){
+                episode_started = true;
+            }
             mouse_body = step.location;
             bool worked = false;
             try {
@@ -184,7 +189,7 @@ void create_additional_step_data (const Static_data &data,
             agent_cells.predator_location = step.location;
             robot_orientation = to_radians(step.rotation);
         }
-        if (!new_frame || !new_frame_prey_data || !new_frame_predator_data) continue;
+        if (!new_frame || !new_frame_prey_data || !new_frame_predator_data || !episode_started) continue;
         new_frame = false;
         if (delta_t <= 0) continue;
 
@@ -251,11 +256,12 @@ void create_additional_step_data (const Static_data &data,
 
         prev_particles = particles;
     }
-    belief_state_progress.save("../results/episode_" + to_string(episode_number));
+    belief_state_progress.save(folder + "/episode_" + to_string(episode_number) + ".json");
 }
 
 int main(int argc, char **argv) {
     Parser p(argc, argv);
+    auto destination_folder = p.get(Key("-df", "--destination_folder"), "");
     auto experiment_file = p.get(Key("-e", "--experiment"), "");
     auto simulation_file = p.get(Key("-b", "--belief_state_file"), "");
     auto configuration_file = p.get(Key("-c","--configuration_file"),"");
@@ -270,7 +276,6 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    int workers = 8;
     Thread_pool tp;
     Experiment experiment;
     if (!experiment.load(experiment_file)){
@@ -293,10 +298,9 @@ int main(int argc, char **argv) {
         auto &episode = experiment.episodes[e];
         cout << "Processing trajectories " << e << endl;
         auto &sim_episode = episodes_additional_data[e];
-        tp.run([&data, &sim_episode, &episode, e]() {
-            create_additional_step_data(data, sim_episode, episode, e);
+        tp.run([&data, &sim_episode, &episode, e, destination_folder]() {
+            create_additional_step_data(data, sim_episode, episode, e, destination_folder);
         });
     }
     tp.wait_all();
-    episodes_additional_data.save(simulation_file + ".json");
 }

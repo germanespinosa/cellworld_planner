@@ -71,10 +71,8 @@ namespace cell_world::planner {
             model.set_state(particle);
             unsigned int current_lppo_cell_id = selected_option->cell.id;
             bool episode_finished = false;
-            int depth = 1;
             PERF_START("Tree_search::get_best_move_ucb1:episode");
-            for (unsigned int t = 0;
-                t < data.simulation_parameters.tree_search_parameters.depth && !episode_finished; t++) {
+            for (unsigned int depth = 0; depth < data.simulation_parameters.tree_search_parameters.depth && !episode_finished;) {
                 float step_value = -data.simulation_parameters.reward.step_cost;
                 auto &prey_cell = sim_prey.public_state().cell;
                 if (prey_cell == data.goal_cell()) {
@@ -105,9 +103,13 @@ namespace cell_world::planner {
                         PERF_START("Tree_search::get_best_move_ucb1:set_next_step");
                         auto &current_lppo_cell = data.cells[current_lppo_cell_id];
                         if (Chance::coin_toss(data.simulation_parameters.prey_parameters.randomness)) {
+                            PERF_START("Tree_search::get_best_move_ucb1:set_next_step:random");
                             sim_prey.next_move = pick_random(data.world.connection_pattern);
+                            PERF_STOP("Tree_search::get_best_move_ucb1:set_next_step:random");
                         } else {
+                            PERF_START("Tree_search::get_best_move_ucb1:set_next_step:not_random");
                             sim_prey.next_move = data.paths.get_move(prey_cell, current_lppo_cell);
+                            PERF_STOP("Tree_search::get_best_move_ucb1:set_next_step:not_random");
                         }
                         PERF_STOP("Tree_search::get_best_move_ucb1:set_next_step");
                         PERF_START("Tree_search::get_best_move_ucb1:model_update");

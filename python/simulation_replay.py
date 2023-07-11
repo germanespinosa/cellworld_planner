@@ -73,6 +73,8 @@ class Simulation_replay(QMainWindow):
     def load_results(self, file_name):
         simulation = Simulation.load_from_file(file_name)
         stats = Simulation_statistics.load_from_sim_file_name(file_name)
+        if stats is None:
+            stats = simulation.get_stats()
         self.load_simulation(simulation, stats)
 
     def load_items(self):
@@ -96,10 +98,11 @@ class Simulation_replay(QMainWindow):
 
     def load_simulation(self, simulation: Simulation, simulation_statistics: Simulation_statistics, folder: str = ""):
         self.simulation = simulation
-        self.simulation_statistics = simulation_statistics
-        #self.list_gadget.addItems(["{:03d}".format(x) for x in range(len(self.simulation.episodes))])
-        stat_text = self.simulation_statistics.format("Survival_rate: {survival_rate:.4f}\nCapture_rate: {capture_rate:.4f}\nPursue_rate: {pursue_rate:.4f}\nBelief_state_entropy: {belief_state_entropy:.4f}\nLength: {length:.4f}\nDistance: {distance:.4f}\nVisited_cells: {visited_cells:.4f}\nValue: {value:.4f}\nDecision difficulty: {decision_difficulty:.4f}")
-        self.stats.setText(stat_text)
+        if simulation_statistics:
+            self.simulation_statistics = simulation_statistics
+            #self.list_gadget.addItems(["{:03d}".format(x) for x in range(len(self.simulation.episodes))])
+            stat_text = self.simulation_statistics.format("Survival_rate: {survival_rate:.4f}\nCapture_rate: {capture_rate:.4f}\nPursue_rate: {pursue_rate:.4f}\nBelief_state_entropy: {belief_state_entropy:.4f}\nLength: {length:.4f}\nDistance: {distance:.4f}\nVisited_cells: {visited_cells:.4f}\nValue: {value:.4f}\nDecision difficulty: {decision_difficulty:.4f}")
+            self.stats.setText(stat_text)
         self.world = World.get_from_parameters_names(self.simulation.world_info.world_configuration,self.simulation.world_info.world_implementation)
         self.load_items()
         if folder:

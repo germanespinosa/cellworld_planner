@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+
+#
+#survival_rate_file="../results/slow_00_00_survival_rate.json"
+#echo "[]" > $survival_rate_file
+#for TSS in {1..100}
+#do
+#  echo "${survival_rate_file} ${TSS}"
+#    ../cmake-build-release/simulation -cf ../sim_config/base_config_slow.json -se 1000 -pyf ../config/prey_parameters/default -o 00_00 -tss $TSS -sr $survival_rate_file
+#done
+#
+#survival_rate_file="../results/fast_00_00_survival_rate.json"
+#echo "[]" > $survival_rate_file
+#for TSS in {1..100}
+#do
+#  echo "${survival_rate_file} ${TSS}"
+#  ../cmake-build-release/simulation -cf ../sim_config/base_config_slow.json -se 1000 -pyf ../config/prey_parameters/default -o 00_00 -tss $TSS -sr $survival_rate_file
+#done
+
+
+for ENT in {0..9}
+do
+  for WN in {0..9}
+  do
+    survival_rate_file="../results/slow_0${WN}_0${ENT}_survival_rate.json"
+    echo "[]" > $survival_rate_file
+    for TSS in {1..100}
+    do
+      echo "${survival_rate_file} ${TSS}"
+      ../cmake-build-release/simulation -cf ../sim_config/base_config_slow.json -se 1000 -pyf ../config/prey_parameters/default -o 0${WN}_0${ENT} -tss $TSS -sr $survival_rate_file
+    done
+  done
+  for WN in {10..19}
+  do
+    survival_rate_file="../results/slow_${WN}_0${ENT}_survival_rate.json"
+    echo "[]" > $survival_rate_file
+    for TSS in {1..100}
+    do
+      echo "${survival_rate_file} ${TSS}"
+      ../cmake-build-release/simulation -cf ../sim_config/base_config_slow.json -se 1000 -pyf ../config/prey_parameters/default -o ${WN}_0${ENT} -tss $TSS -sr $survival_rate_file
+    done
+  done
+
+done

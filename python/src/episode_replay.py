@@ -24,7 +24,7 @@ class Episode_replay(QWidget):
     def __init__(self):
         super().__init__()
         self.world = World.get_from_parameters_names("hexagonal", "canonical")
-        self.display = Display(self.world, fig_size=(5, 6))
+        self.display = Display(self.world, fig_size=(10, 10))
         self.predator_destination_arrow = None
         self.plan_arrows = [None for x in range(100)]
         self.tick_counter = 0
@@ -37,8 +37,10 @@ class Episode_replay(QWidget):
         self.view_belief = True
         self.view_predator = True
         self.view_prey = True
-        self.view_predator_destination = True
-        self.view_prey_plan = True
+        self.view_predator_destination = False
+        self.view_prey_plan = False
+        self.stop_at_capture = True
+
 
         self.setWindowTitle("Episode replay")
         self.tick_interval = .116
@@ -57,7 +59,7 @@ class Episode_replay(QWidget):
 
     def set_world(self, world: World):
         self.world = world
-        self.display = Display(self.world)
+        self.display = Display(self.world, fig_size=(10, 10))
         self.episode_render = FigureCanvasQTAgg(self.display.fig)
         for i in reversed(range(self.central_layout.count())):
             self.central_layout.itemAt(i).widget().setParent(None)
@@ -88,14 +90,16 @@ class Episode_replay(QWidget):
         for cell in self.world.cells:
             outline = None
             color = "white"
-            if upper_limit > 0 and self.view_belief:
-                color = cmap[cell.id]
+            # if upper_limit > 0 and self.view_belief:
+            #     color = cmap[cell.id]
+            if cell.id == 330:
+                color = "orange"
             if prey_cell.id == cell.id and self.view_prey:
-                color = "green"
+                color = "blue"
                 if prey_state.capture:
                     outline = "red"
             if predator_cell.id == cell.id and self.view_predator:
-                color = "blue"
+                color = "red"
                 if prey_state.capture:
                     outline = "red"
             if self.world.cells[cell.id].occluded:
@@ -141,6 +145,8 @@ class Episode_replay(QWidget):
             print("Step", i, "of", len(self.current_episode))
             self.current_frame = i
             self.show_step(video_writer=video_writer)
+            if  self.stop_at_capture and self.current_episode[self.current_frame].prey_state.capture:
+                break
         video_writer.close()
 
     def tick(self):
@@ -171,7 +177,7 @@ class Episode_replay(QWidget):
         self.episode_render = FigureCanvasQTAgg(self.display.fig)
         self.central_layout.addWidget(self.episode_render, 0, 0, Qt.AlignmentFlag.AlignTop)
         self.central_layout.setColumnMinimumWidth(0, 600)
-        self.central_layout.setRowMinimumHeight(0, 500)
+        self.central_layout.setRowMinimumHeight(0, 550)
         self.episode_controls = QWidget()
         self.central_layout.addWidget(self.episode_controls, 1, 0, Qt.AlignmentFlag.AlignCenter)
         self.episode_controls_layout = QHBoxLayout(self.episode_controls)

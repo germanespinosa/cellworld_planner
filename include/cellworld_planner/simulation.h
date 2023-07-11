@@ -85,9 +85,9 @@ namespace cell_world::planner {
         Prey_parameters prey_parameters;
         unsigned int steps = 50;
         Json_object_members(
-                Add_member(reward);
-                Add_member(tree_search_parameters);
-                Add_member(predator_parameters);
+                Add_optional_member(reward);
+                Add_optional_member(tree_search_parameters);
+                Add_optional_member(predator_parameters);
                 Add_optional_member(prey_parameters);
                 Add_optional_member(steps);
         )

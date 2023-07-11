@@ -1,1 +1,1 @@
-{"belief_state_parameters":{"max_particle_count":10,"max_particle_creation_attempts":50},"simulations":50,"depth":50}
+{"belief_state_parameters":{"max_particle_count":10,"max_particle_creation_attempts":50},"simulations":50,"depth":10}

@@ -1,5 +1,5 @@
 def __module_version__():
-	return 0, 0, 16 
+	return 0, 0, 17 
 
 
 def __module_name__():
@@ -44,6 +44,10 @@ def __package_name__():
 
 def __files__():
 	return ['simulation.py'] 
+
+
+def __additional_files__():
+	return [] 
 
 
 def __setup_py__():

@@ -185,7 +185,7 @@ class Episode_statistics(Statistics):
 class Simulation_statistics(Statistics):
     def __init__(self):
         Statistics.__init__(self)
-        self.episode_stats = JsonList(list_type=Episode_statistics)
+        self.episode_stats = JsonList(list_type=Statistics)
 
     @staticmethod
     def stats_filename(sim_filename: str) -> str:

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import numpy as np
-import matplotlib
+import matplotlib.pyplot as plt
 from time import sleep
 from cellworld import *
 import sys

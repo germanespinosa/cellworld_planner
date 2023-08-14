@@ -101,6 +101,9 @@ int main(int argc, char **argv){
                 s);
     }
     tp.wait_all();
+    if (!results_file.empty()) {
+        simulation.save(results_file);
+    }
     auto survival_rate = simulation.episodes.count([](const Simulation_episode  &e){ return e.back().prey_state.cell_id==330;});
     if (!survival_results_file.empty()) {
         Json_float_vector survival_rate_results;
@@ -111,7 +114,4 @@ int main(int argc, char **argv){
         survival_rate_results.save(survival_results_file);
     }
     cout << "Survival rate: " << survival_rate << endl;
-    if (!results_file.empty()) {
-        simulation.save(results_file);
-    }
 }

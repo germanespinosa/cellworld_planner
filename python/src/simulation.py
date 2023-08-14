@@ -1,7 +1,7 @@
 import math
 
 from json_cpp import JsonObject, JsonList
-from cellworld import Experiment, Episode, Episode_list, Step, Cell_group_builder, World_info, World
+from cellworld import Experiment, Episode, Episode_list, Step, Cell_group_builder, World_info, World, Capture_parameters
 import math
 import os
 
@@ -104,7 +104,7 @@ class Prey_parameters(JsonObject):
         self.randomness = randomness
 
 class Simulation_parameters(JsonObject):
-    def __init__(self, reward: Reward = None, tree_search_parameters: Tree_search_parameters = None, predator_parameters: Predator_parameters = None, prey_parameters: Prey_parameters = None, steps: int = 50):
+    def __init__(self, reward: Reward = None, tree_search_parameters: Tree_search_parameters = None, capture_parameters: Capture_parameters = None, predator_parameters: Predator_parameters = None, prey_parameters: Prey_parameters = None, steps: int = 50):
         if reward:
             self.reward = reward
         else:
@@ -124,6 +124,11 @@ class Simulation_parameters(JsonObject):
             self.prey_parameters = prey_parameters
         else:
             self.prey_parameters = Prey_parameters()
+
+        if capture_parameters:
+            self.capture_parameters = capture_parameters
+        else:
+            self.capture_parameters = Capture_parameters()
 
         self.steps = steps
 

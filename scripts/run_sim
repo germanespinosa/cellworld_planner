@@ -1,45 +1,64 @@
 #!/usr/bin/env bash
 
-
+#result_folder="../results/sim1"
+#speed="slow"
 #
-#survival_rate_file="../results/slow_00_00_survival_rate.json"
-#echo "[]" > $survival_rate_file
-#for TSS in {1..100}
+#for ENT in 0 2 5 7 9
 #do
-#  echo "${survival_rate_file} ${TSS}"
-#    ../cmake-build-release/simulation -cf ../sim_config/base_config_slow.json -se 1000 -pyf ../config/prey_parameters/default -o 00_00 -tss $TSS -sr $survival_rate_file
+#  for WN in {0..6}
+#  do
+#    survival_rate_file="${result_folder}/${speed}_0${WN}_0${ENT}_survival_rate.json"
+#    TSS_start=0
+#    if [ -f $survival_rate_file ]
+#    then
+#      back=$(cat $survival_rate_file)
+#      TSS_start=$(python -c "print(len($back))")
+#    fi
+#    echo $TSS_start
+#    for TSS in {1..50}
+#    do
+#      if (( TSS > TSS_start ))
+#      then
+#        echo "${survival_rate_file} ${TSS}"
+#        ../cmake-build-release/simulation -cf ../sim_config/base_config_${speed}.json -se 1000 -pyf ../config/prey_parameters/default -o 0${WN}_0${ENT} -tss $TSS -sr $survival_rate_file > /dev/null
+#      fi
+#   done
+#  done
 #done
-#
-#survival_rate_file="../results/fast_00_00_survival_rate.json"
-#echo "[]" > $survival_rate_file
-#for TSS in {1..100}
-#do
-#  echo "${survival_rate_file} ${TSS}"
-#  ../cmake-build-release/simulation -cf ../sim_config/base_config_slow.json -se 1000 -pyf ../config/prey_parameters/default -o 00_00 -tss $TSS -sr $survival_rate_file
-#done
 
 
-for ENT in {0..9}
-do
-  for WN in {0..9}
+function run_planning_budget_progression {
+  sim_speed="$1"
+  sim_world="$2"
+  sim_results_folder="$3"
+  sim_max_budget="$4"
+  sim_reps=$5
+
+  mkdir "$sim_results_folder" -p
+
+  sim_survival_file="${sim_results_folder}/${sim_speed}_${sim_world}_survival_rate.json"
+  TSS_start=1
+  if [ -f "${sim_survival_file}" ]
+  then
+    back=$(cat "${sim_survival_file}")
+    TSS_start=$(python -c "print(len($back)+1)")
+  fi
+
+  for (( TSS=TSS_start;TSS<=sim_max_budget;TSS++))
   do
-    survival_rate_file="../results/slow_0${WN}_0${ENT}_survival_rate.json"
-    echo "[]" > $survival_rate_file
-    for TSS in {1..100}
-    do
-      echo "${survival_rate_file} ${TSS}"
-      ../cmake-build-release/simulation -cf ../sim_config/base_config_slow.json -se 1000 -pyf ../config/prey_parameters/default -o 0${WN}_0${ENT} -tss $TSS -sr $survival_rate_file
-    done
+    echo "${sim_survival_file} ${TSS}"
+    result_file="${sim_results_folder}/${sim_speed}_${sim_world}_${TSS}.json"
+    ../cmake-build-release/simulation -cf ../sim_config/base_config_${sim_speed}.json -se $sim_reps -pyf ../config/prey_parameters/default -o ${sim_world} -tss $TSS -sr $sim_survival_file -r $result_file -> /dev/null
   done
-  for WN in {10..19}
-  do
-    survival_rate_file="../results/slow_${WN}_0${ENT}_survival_rate.json"
-    echo "[]" > $survival_rate_file
-    for TSS in {1..100}
-    do
-      echo "${survival_rate_file} ${TSS}"
-      ../cmake-build-release/simulation -cf ../sim_config/base_config_slow.json -se 1000 -pyf ../config/prey_parameters/default -o ${WN}_0${ENT} -tss $TSS -sr $survival_rate_file
-    done
-  done
+}
 
-done
+result_folder="../results/sim3"
+speed="slow"
+world="00_00"
+reps=100
+max_budget=500
+
+mkdir "$result_folder" -p
+run_planning_budget_progression "$speed" "$world" "$result_folder" $max_budget $reps
+
+

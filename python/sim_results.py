@@ -14,8 +14,24 @@ from src import *
 
 import matplotlib.pyplot as plt
 
-plt.plot(JsonList.create_type(float)().load_from_file("../results/03_21_05_survival_rate.json"))
-plt.plot(JsonList.create_type(float)().load_from_file("../results/15_00_00_survival_rate.json"))
+speed = "slow"
+data = {}
+for ent in [0, 2, 5, 7, 9]:
+    data[ent] = []
+    for wn in range(6):
+        file_name = "../results/sim1/%s_%02i_%02i_survival_rate.json" % (speed, wn, ent)
+        print(file_name)
+        values = JsonList.create_type(float)().load_from_file(file_name)
+        print(values)
+        data[ent].append(values)
 
-plt.savefig("21_05_1000.png")
+
+for ent in [0, 2, 5, 7, 9]:
+    average = [0.0 for x in range(50)]
+    for survival_rate in data[ent]:
+        print(survival_rate)
+        average = [x + y /len(data[ent]) for x, y in zip(average, survival_rate)]
+    plt.plot(average, label=str(ent))
+plt.legend()
+plt.savefig("survival_rate.png")
 plt.show()

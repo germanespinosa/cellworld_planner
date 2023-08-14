@@ -23,20 +23,20 @@ find_package (Dependencies REQUIRED)
 ####
 
 install_git_dependency(Thread_pool
-        https://github.com/germanespinosa/thread_pool
+        https://github.com/cellworld-neuro/dependency_thread_pool
         INCLUDE_DIRECTORIES include)
 
 install_git_dependency(Params-cpp
-        https://github.com/germanespinosa/params-cpp
+        https://github.com/cellworld-neuro/dependency_params-cpp
         CMAKE_PROJECT
         IMPORT_TARGETS params-cpp)
 
 install_git_dependency(Gauges
-        https://github.com/germanespinosa/gauges
+        https://github.com/cellworld-neuro/dependency_gauges
         INCLUDE_DIRECTORIES include)
 
 install_git_dependency(Perf-analysis
-        https://github.com/germanespinosa/perf-analysis
+        https://github.com/cellworld-neuro/dependency_perf-analysis
         CMAKE_PROJECT
         IMPORT_TARGETS perf-analysis
         INCLUDE_DIRECTORIES include)
@@ -78,6 +78,12 @@ target_link_libraries( cellworld_planner
         ${Cellworld_IMPORT_TARGETS}
         params-cpp
         perf-analysis)
+
+add_executable(compute_visual_complexity src/tools/compute_visual_complexity.cpp)
+
+target_link_libraries( compute_visual_complexity
+        PRIVATE
+        cellworld_planner)
 
 add_executable(create_lppos src/tools/create_lppos.cpp)
 

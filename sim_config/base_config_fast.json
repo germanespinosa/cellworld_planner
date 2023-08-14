@@ -5,6 +5,11 @@
     "capture_cost": 100,
     "episode_reward": 0
   },
+  "capture_parameters": {
+    "distance": 0.5,
+    "angle": 360,
+    "cool_down": 0.5
+  },
   "tree_search_parameters": {
     "belief_state_parameters": {
       "max_particle_count": 100,

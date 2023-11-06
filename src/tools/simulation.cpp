@@ -49,6 +49,10 @@ int main(int argc, char **argv){
     if (tree_search_simulations != -1) {
         parameters.tree_search_parameters.simulations = tree_search_simulations;
     }
+
+    int group_size = stoi(p.get(Key("-g","--group_size"),"0"));
+    auto group_file_name = p.get(Key("-gf","--group_file_name"),"");
+
     auto tree_search_depth = stoi(p.get(Key("-tsd","--tree_search_depth"),"-1"));
     if (tree_search_depth != -1) {
         parameters.tree_search_parameters.depth = tree_search_depth;
@@ -91,19 +95,47 @@ int main(int argc, char **argv){
     simulation.world_info.world_implementation = "canonical";
     simulation.world_info.occlusions = occlusions;
     simulation.parameters = data.simulation_parameters;
-    simulation.episodes.reserve(seed_end-seed_start);
-    for (unsigned int s = seed_start;s < seed_end;s++) {
+    simulation.episodes.reserve(seed_end - seed_start);
+    for (unsigned int s = seed_start; s < seed_end; s++) {
         cout << "Processing seed " << s << endl;
         auto &episode = simulation.episodes.emplace_back();
-        tp.run( run_simulation,
-                std::ref(data),
-                std::ref(episode),
-                s);
+        tp.run(run_simulation,
+               std::ref(data),
+               std::ref(episode),
+               s);
+//        run_simulation( std::ref(data), std::ref(episode), s);
     }
     tp.wait_all();
-    if (!results_file.empty()) {
-        simulation.save(results_file);
+    if (group_size>0) {
+        Simulation group_simulation;
+        group_simulation.world_info.world_configuration = "hexagonal";
+        group_simulation.world_info.world_implementation = "canonical";
+        group_simulation.world_info.occlusions = occlusions;
+        group_simulation.parameters = data.simulation_parameters;
+        group_simulation.episodes.reserve(seed_end - seed_start);
+        int group_number = 0;
+        for (auto &episode: simulation.episodes) {
+            group_simulation.episodes.push_back(episode);
+            if (group_simulation.episodes.size() == group_size) {
+                if (!results_file.empty()) {
+                    char buff[200];
+                    snprintf(buff, sizeof(buff), group_file_name.c_str(), group_number);
+                    std::string group_results_file = buff;
+                    group_simulation.save(group_results_file);
+                    group_simulation.episodes.clear();
+                    group_number++;
+                }
+            }
+        }
+        if (!group_simulation.episodes.empty()){
+            char buff[200];
+            snprintf(buff, sizeof(buff), group_file_name.c_str(), group_number);
+            std::string group_results_file = buff;
+            group_simulation.save(group_results_file);
+            group_simulation.episodes.clear();
+        }
     }
+    simulation.save(results_file);
     auto survival_rate = simulation.episodes.count([](const Simulation_episode  &e){ return e.back().prey_state.cell_id==330;});
     if (!survival_results_file.empty()) {
         Json_float_vector survival_rate_results;

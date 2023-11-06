@@ -26,6 +26,7 @@ for ent in [0, 2, 5, 7, 9]:
         data[ent].append(values)
 
 
+fig = plt.figure(figsize=(20, 10))
 for ent in [0, 2, 5, 7, 9]:
     average = [0.0 for x in range(50)]
     for survival_rate in data[ent]:
@@ -33,5 +34,5 @@ for ent in [0, 2, 5, 7, 9]:
         average = [x + y /len(data[ent]) for x, y in zip(average, survival_rate)]
     plt.plot(average, label=str(ent))
 plt.legend()
-plt.savefig("survival_rate.png")
+plt.savefig("survival_rate.pdf")
 plt.show()

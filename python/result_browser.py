@@ -74,7 +74,11 @@ class Example(QMainWindow):
         self.render.draw()
 
         if frames is not None:
-            image_from_plot = np.frombuffer(self.render.tostring_rgb(), dtype='uint8').reshape(self.render.get_width_height()[::-1] + (3,))
+            width, height = self.display.fig.get_size_inches() * self.display.fig.get_dpi()
+            width = int(width)
+            height = int(height)
+            buff = self.render.tostring_rgb()
+            image_from_plot = np.frombuffer(buff, dtype='uint8').reshape(height, width, 3)
             frames.append(image_from_plot)
 
     def play_pause(self, e):
@@ -280,6 +284,7 @@ class Example(QMainWindow):
             self.world.set_occlusions(occlusions_builder)
         else:
             self.world = World.get_from_world_info(self.simulation.world_info)
+        self.list_gadget.clear()
         self.list_gadget.addItems(["{:03d}".format(x) for x in range(len(self.simulation.episodes))])
         stats = Simulation_statistics.load_from_sim_file_name(file_name)
         if stats is None:

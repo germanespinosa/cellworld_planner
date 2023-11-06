@@ -66,7 +66,7 @@ set( cellworld_planner_files
 add_library(cellworld_planner ${cellworld_planner_files})
 
 install_git_dependency(Cellworld
-        https://github.com/germanespinosa/cellworld
+        https://github.com/cellworld-neuro/cellworld
         PRIVATE
         CMAKE_PROJECT
         IMPORT_TARGETS cellworld)

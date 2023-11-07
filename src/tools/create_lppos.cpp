@@ -49,14 +49,13 @@ int main (int argc, char **argv){
         if (cell.coordinates==Coordinates(-20,0) || cell.coordinates==Coordinates(20,0)) lppos_indexes.push_back(cell.id);
     }
 
-    auto index = new_index(graph.cells.size());
+    auto index = cells.get_builder();
     auto rng = std::default_random_engine {};
     std::shuffle(index.begin(), index.end(), rng);
 
-    while (lppos_indexes.size()>=lppo_count){
+    while (lppos_indexes.size()<lppo_count){
         for (auto i: index) {
             if (lppos_indexes.size()>=lppo_count) break;
-            if (cells[i].occluded) continue;
             if (lppos_indexes.contains(i)) continue;
             if (derivative_product[i]>=threshold) lppos_indexes.push_back(i);
         }

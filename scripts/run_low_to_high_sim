@@ -1,11 +1,18 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
+occlusions=$1
+FOLDER="../results/planning_sim/${occlusions}/"
+mkdir $FOLDER -p
+echo ""> ../results/planning_sim/${occlusions}/execution.log
 
-echo ""> ../results/planning_sim/execution.log
-
-for PLANNING in 00010 00011 00012 00013 00014 00015 00016 00017 00018 00019 00020 00021 00022 00023 00024 00025 00050 00100 00250 00500 01000 02500 05000 10000
+for PLANNING in 00010 00011 00012 00013 00014 00015 00016 00017 00018 00019 00020 00021 00022 00023 00024 00025 00050 00100
 do
-  FOLDER="../results/planning_sim/$PLANNING"
-  mkdir $FOLDER -p
-  ../cmake-build-release/simulation -cf ../config/old/d10k.s75_100.json -se 500 -g 100 -pyf ../config/prey_parameters/default -tss $PLANNING -r ../results/planning_sim/planning_$PLANNING.json -gf ../results/planning_sim/$PLANNING/planning_${PLANNING}_batch_%05d.json -o 21_05 >> ../results/planning_sim/execution.log
+  if [ ! -f "../results/planning_sim/${occlusions}/planning_${occlusions}_$PLANNING.json" ]; then
+    echo "processing $occlusions $PLANNING"
+    FOLDER="../results/planning_sim/${occlusions}/$PLANNING"
+    mkdir $FOLDER -p
+    ../cmake-build-release/simulation -cf ../config/old/d10k.s35_35.json -se 500 -g 100 -pyf ../config/prey_parameters/default -tss $PLANNING -r ../results/planning_sim/${occlusions}/planning_${occlusions}_$PLANNING.json -gf ../results/planning_sim/${occlusions}/$PLANNING/planning_${PLANNING}_batch_%05d.json -o ${occlusions} >> ../results/planning_sim/${occlusions}/execution.log
+  else
+    echo "skipping $occlusions $PLANNING"
+  fi
 done

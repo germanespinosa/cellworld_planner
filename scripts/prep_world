@@ -1,0 +1,26 @@
+#!/bin/bash
+occlusions=$1
+force=$2
+configuration="hexagonal"
+
+if [ "$force" != "-f" ]; then
+   if [ -f "$CELLWORLD_CACHE/graph/hexagonal.$occlusions.options" ]; then
+      exit
+   fi
+fi
+echo "creating paths"
+../cmake-build-release/create_paths -c ${configuration} -o $occlusions > "$CELLWORLD_CACHE/paths/${configuration}.${occlusions}.astar"
+echo "creating visibility"
+../cmake-build-release/create_visibility -c ${configuration} -o $occlusions > "$CELLWORLD_CACHE/graph/${configuration}.${occlusions}.cell_visibility"
+echo "creating world_statistics"
+../cmake-build-release/create_world_statistics -c ${configuration} -o $occlusions > "$CELLWORLD_CACHE/world_statistics/${configuration}.$occlusions"
+echo "creating predator_destinations"
+../cmake-build-release/create_predator_destinations -o $occlusions > "$CELLWORLD_CACHE/cell_group/hexagonal.$occlusions.predator_destinations"
+echo "creating spawn_locations"
+../cmake-build-release/create_spawn_locations -o $occlusions > "$CELLWORLD_CACHE/cell_group/hexagonal.$occlusions.spawn_locations"
+echo "creating lppos"
+../cmake-build-release/create_lppos -o $occlusions > "$CELLWORLD_CACHE/cell_group/hexagonal.$occlusions.lppo"
+echo "creating options"
+../cmake-build-release/create_options -o $occlusions > "$CELLWORLD_CACHE/graph/hexagonal.$occlusions.options"
+echo "finished"
+

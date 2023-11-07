@@ -1,0 +1,7 @@
+#!/bin/bash
+
+cat "030_LV_sim_worlds.txt" | while read WORLD; do
+  echo "running world $WORLD"
+  ./prep_world $WORLD
+  ./run_low_to_high_sim $WORLD
+done

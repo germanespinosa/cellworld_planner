@@ -16,7 +16,7 @@ int main (int argc, char **argv){
     Graph graph = world.create_graph();
     Cell_group cells = world.create_cell_group().free_cells();
     Map map(cells);
-    auto world_centrality = graph.get_centrality();
+    auto world_centrality = graph.get_centrality(depth);
     int lppo_count = (float(world_centrality.size()) * percentage)/100;
     Json_vector<float> derivative_product (world_centrality.size(),0);
     auto pairs = world.connection_pattern.get_pairs();
@@ -38,8 +38,10 @@ int main (int argc, char **argv){
     float threshold = 0;
     float next_threshold = 0;
     int candidates_counter = 0;
-    for (auto cell_derivative_product:derivative_product) if (cell_derivative_product>next_threshold) next_threshold = cell_derivative_product;
-    while (candidates_counter<lppo_count){
+    for (auto cell_derivative_product:derivative_product)
+        if (cell_derivative_product > next_threshold) next_threshold = cell_derivative_product;
+
+    while (candidates_counter < lppo_count){
         threshold = next_threshold;
         next_threshold = 0;
         candidates_counter = 0;

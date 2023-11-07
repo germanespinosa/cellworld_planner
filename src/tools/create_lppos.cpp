@@ -1,5 +1,7 @@
 #include <cell_world.h>
 #include <params_cpp.h>
+#include <algorithm>
+#include <random>
 
 using namespace params_cpp;
 using namespace cell_world;
@@ -11,13 +13,12 @@ int main (int argc, char **argv){
     Parser p(argc,argv);
     auto occlusions = p.get(Key("-o","--occlusions"),"00_00");
     auto depth = stoi(p.get(Key("-d","--depth"),"1"));
-    auto percentage = stoi(p.get(Key("-p","--percentage"),"10"));
+    auto lppo_count = stoi(p.get(Key("-k","--lppo_count"),"10"));
     World world = World::get_from_parameters_name("hexagonal","canonical", occlusions);
     Graph graph = world.create_graph();
     Cell_group cells = world.create_cell_group().free_cells();
     Map map(cells);
     auto world_centrality = graph.get_centrality(depth);
-    int lppo_count = (float(world_centrality.size()) * percentage)/100;
     Json_vector<float> derivative_product (world_centrality.size(),0);
     auto pairs = world.connection_pattern.get_pairs();
     for (const Cell &cell:cells){
@@ -35,24 +36,39 @@ int main (int argc, char **argv){
         }
         derivative_product[cell.id] = cell_centrality_derivative_product;
     }
+
+
     float threshold = 0;
     float next_threshold = 0;
-    int candidates_counter = 0;
-    for (auto cell_derivative_product:derivative_product)
-        if (cell_derivative_product > next_threshold) next_threshold = cell_derivative_product;
 
-    while (candidates_counter < lppo_count){
+    next_threshold = derivative_product.max([](auto e){return e;});
+
+    Cell_group_builder lppos_indexes;
+
+    for (const Cell &cell :cells) {
+        if (cell.coordinates==Coordinates(-20,0) || cell.coordinates==Coordinates(20,0)) lppos_indexes.push_back(cell.id);
+    }
+
+    auto index = new_index(graph.cells.size());
+    auto rng = std::default_random_engine {};
+    std::shuffle(index.begin(), index.end(), rng);
+
+    while (lppos_indexes.size()>=lppo_count){
+        for (auto i: index) {
+            if (lppos_indexes.size()>=lppo_count) break;
+            if (cells[i].occluded) continue;
+            if (lppos_indexes.contains(i)) continue;
+            if (derivative_product[i]>=threshold) lppos_indexes.push_back(i);
+        }
         threshold = next_threshold;
         next_threshold = 0;
-        candidates_counter = 0;
         for (auto cell_derivative_product:derivative_product) {
-            if (cell_derivative_product>=threshold) candidates_counter++;
             if (cell_derivative_product<threshold && cell_derivative_product>next_threshold) next_threshold=cell_derivative_product;
         }
     }
     Cell_group lppos;
-    for (const Cell &cell:graph.cells) {
-        if (derivative_product[cell.id]>=threshold || cell.coordinates==Coordinates(-20,0) || cell.coordinates==Coordinates(20,0)) lppos.add(cell);
+    for (const Cell &cell :cells) {
+        if (lppos_indexes.contains(cell.id)) lppos.add(cell);
     }
     cout << lppos << endl;
 }

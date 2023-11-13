@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for i in {0..15}
+do
+  python3 ../python/Step_additional_info.py $i &
+done

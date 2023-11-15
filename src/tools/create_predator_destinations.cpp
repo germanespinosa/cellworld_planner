@@ -10,16 +10,11 @@ using namespace json_cpp;
 int main (int argc, char **argv){
     Parser p(argc,argv);
     auto occlusions = p.get(Key("-o","--occlusions"),"00_00");
-    World world = World::get_from_parameters_name("hexagonal","canonical", occlusions);
+    World world = World::get_from_parameters_name("hexagonal","canonical");
+    auto robot_occlusions = Cell_group_builder::get_from_parameters_name("hexagonal",  occlusions, "occlusions.robot");
+    world.set_occlusions(robot_occlusions);
     Graph graph = world.create_graph();
     Cell_group cells = world.create_cell_group().free_cells();
-    Graph g = world.create_graph();
-    Cell_group pd;
-    for (const Cell &cell:cells) {
-        if (graph.is_connected(cell,world.cells[0]) && g[cell].size() == world.connection_pattern.size()){
-            pd.add(cell);
-        }
-    }
-    cout << pd << endl;
+    cout << cells.get_builder() << endl;
 }
 

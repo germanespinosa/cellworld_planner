@@ -23,20 +23,20 @@ find_package (Dependencies REQUIRED)
 ####
 
 install_git_dependency(Thread_pool
-        https://github.com/cellworld-neuro/dependency_thread_pool
+        https://github.com/cellworld/dependency_thread_pool
         INCLUDE_DIRECTORIES include)
 
 install_git_dependency(Params-cpp
-        https://github.com/cellworld-neuro/dependency_params-cpp
+        https://github.com/cellworld/dependency_params-cpp
         CMAKE_PROJECT
         IMPORT_TARGETS params-cpp)
 
 install_git_dependency(Gauges
-        https://github.com/cellworld-neuro/dependency_gauges
+        https://github.com/cellworld/dependency_gauges
         INCLUDE_DIRECTORIES include)
 
 install_git_dependency(Perf-analysis
-        https://github.com/cellworld-neuro/dependency_perf-analysis
+        https://github.com/cellworld/dependency_perf-analysis
         CMAKE_PROJECT
         IMPORT_TARGETS perf-analysis
         INCLUDE_DIRECTORIES include)
@@ -66,7 +66,7 @@ set( cellworld_planner_files
 add_library(cellworld_planner ${cellworld_planner_files})
 
 install_git_dependency(Cellworld
-        https://github.com/cellworld-neuro/cellworld
+        https://github.com/cellworld/cellworld
         PRIVATE
         CMAKE_PROJECT
         IMPORT_TARGETS cellworld)
@@ -108,6 +108,13 @@ add_executable(create_visibility src/tools/create_visibility.cpp)
 target_link_libraries( create_visibility
         PRIVATE
         cellworld_planner )
+
+add_executable(create_robot_occlusions src/tools/create_robot_occlusions.cpp)
+
+target_link_libraries( create_robot_occlusions
+        PRIVATE
+        cellworld_planner )
+
 
 add_executable(create_predator_destinations src/tools/create_predator_destinations.cpp)
 

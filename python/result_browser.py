@@ -104,6 +104,16 @@ class Example(QMainWindow):
         codec = codec.split(" ")[0];
         concat_clip.write_videofile(video_file, fps=fps, codec=codec)
 
+    def detect_bait(self):
+        pass
+
+    def detect_wait(self):
+        pass
+
+    def detect_peek(self):
+        pass
+
+
     def init_menu(self):
         exitAct = QAction('&Exit', self)
         exitAct.setShortcut('Ctrl+Q')
@@ -185,6 +195,26 @@ class Example(QMainWindow):
         replayMenu.addAction(self.playAct)
         replayMenu.addAction(fasterAct)
         replayMenu.addAction(slowerAct)
+
+        waitDectAct = QAction('&Wait', self)
+        waitDectAct.setStatusTip('Detects waits behaviors in the current experiment')
+        waitDectAct.triggered.connect(self.detect_wait)
+
+        baitDectAct = QAction('&Bait', self)
+        baitDectAct.setStatusTip('Detects baits behaviors in the current experiment')
+        baitDectAct.triggered.connect(self.detect_bait)
+
+        peekDectAct = QAction('&Peek', self)
+        peekDectAct.setStatusTip('Detects waits in the current experiment')
+        peekDectAct.triggered.connect(self.detect_peek)
+
+
+        detectMenu = menubar.addMenu('&Detect')
+
+        detectMenu.addAction(waitDectAct)
+        detectMenu.addAction(baitDectAct)
+        detectMenu.addAction(peekDectAct)
+
 
     def tick(self):
         self.show_step()
